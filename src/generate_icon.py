@@ -113,14 +113,36 @@ def generate_icon_ico(png_path: Path, ico_path: Path):
     print(f"  Saved {ico_path}")
 
 
+def extract_png_from_ico(ico_path: Path, png_path: Path):
+    """Extract the largest frame from an existing .ico as a PNG."""
+    try:
+        from PIL import Image
+    except ImportError:
+        print("  Pillow not found — skipping icon.png extraction")
+        return
+    img = Image.open(ico_path)
+    # ico may have multiple sizes; pick the largest
+    sizes = img.info.get("sizes", [(img.width, img.height)])
+    largest = max(sizes, key=lambda s: s[0] * s[1])
+    img.size = largest  # select that frame
+    img = img.convert("RGBA")
+    img.save(png_path, format="PNG")
+    print(f"  Extracted {png_path} from {ico_path}")
+
+
 def main():
     ASSETS_DIR.mkdir(exist_ok=True)
     png_path = ASSETS_DIR / "icon.png"
     ico_path = ASSETS_DIR / "icon.ico"
 
     print("Generating app icon...")
-    generate_icon_png(png_path)
-    generate_icon_ico(png_path, ico_path)
+    if ico_path.exists():
+        # User supplied their own icon.ico — derive icon.png from it
+        extract_png_from_ico(ico_path, png_path)
+    else:
+        # Generate both from scratch
+        generate_icon_png(png_path)
+        generate_icon_ico(png_path, ico_path)
     print("Done.")
 
 
