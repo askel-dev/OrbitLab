@@ -22,6 +22,20 @@ Interaktiv RK4/Euler-simulator för omloppsbanor med stöd för flera planeter, 
 
 ## ⚡ Quick Start
 
+### Option 1: Download Pre-built Executable (Easiest)
+
+**Windows:**
+1. Go to [Releases](../../releases/latest)
+2. Download `OrbitalSimulator-vX.X.X-windows.exe`
+3. Run the .exe file
+
+**macOS:**
+1. Go to [Releases](../../releases/latest)
+2. Download `OrbitalSimulator-vX.X.X-macos.zip`
+3. Extract and right-click → Open
+
+### Option 2: Run from Source
+
 ```bash
 # 1. Clone the repository
 git clone https://github.com/yourusername/OrbitLab.git

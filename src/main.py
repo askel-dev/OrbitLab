@@ -78,7 +78,7 @@ def generate_default_scenarios(planet: Planet) -> tuple[Scenario, ...]:
     # Highly elliptical orbit (e ≈ 0.7) - velocity at periapsis
     e_target = 0.7
     v_elliptical = math.sqrt(planet.mu * (1 + e_target) / r0)
-    
+        
     return (
         Scenario(
             key="orbit",
@@ -771,8 +771,8 @@ class Starfield:
             # Calculate parallax offset - stars move opposite to camera, scaled by depth
             # Deeper stars (higher depth) move more, creating parallax effect
             # Use modulo for infinite wrapping
-            parallax_x = (star.x - camera_x * star.depth * 0.00001) % width
-            parallax_y = (star.y + camera_y * star.depth * 0.00001) % height  # +y because screen Y is inverted
+            parallax_x = (star.x - camera_x * star.depth * 0.000001) % width
+            parallax_y = (star.y + camera_y * star.depth * 0.000001) % height  # +y because screen Y is inverted
             
             # Create grayscale color from brightness
             star_color = (star.brightness, star.brightness, star.brightness)
@@ -941,6 +941,329 @@ def wrap_text(text: str, font: pygame.font.Font, max_width: int) -> list[str]:
     return lines
 
 
+def run_splash_screen(screen: pygame.Surface, clock: pygame.time.Clock) -> bool:
+    """
+    Animated splash screen showing orbits being traced around Earth with particle effects.
+    Returns True if user wants to continue, False if user wants to quit.
+    """
+    from planet_generator import get_preset, get_planet_sprite
+    
+    WIDTH, HEIGHT = screen.get_size()
+    
+    # Animation parameters
+    CAMERA_ZOOM_DURATION = 1.0  # Initial zoom out effect
+    ORBIT_TRACE_DURATION = 1.8  # How long to trace each orbit
+    LOGO_FADE_START = 1.2  # When logo starts fading in
+    LOGO_FADE_DURATION = 0.6  # How long logo fade takes
+    PROMPT_FADE_START = 2.2  # When "press key" prompt appears
+    
+    # Get Earth sprite
+    earth = get_preset("earth")
+    planet_size = 140
+    planet_sprite = get_planet_sprite(earth, planet_size)
+    
+    # Position Earth slightly offset to left to make room for logo
+    planet_center_x = WIDTH // 2
+    planet_center_y = HEIGHT // 2 - 50
+    planet_pos = (planet_center_x - planet_size // 2, planet_center_y - planet_size // 2)
+    
+    # Orbit 1 parameters (primary orbit - cyan)
+    orbit1_semi_major = 220
+    orbit1_semi_minor = 150
+    orbit1_color = (100, 200, 255)  # Cyan
+    orbit1_sat_color = (255, 215, 0)  # Gold
+    
+    # Orbit 2 parameters (secondary orbit - magenta, tilted)
+    orbit2_semi_major = 200
+    orbit2_semi_minor = 130
+    orbit2_color = (255, 100, 200)  # Magenta/Pink
+    orbit2_sat_color = (100, 255, 150)  # Green
+    
+    # Colors
+    SPACE_BG = (5, 10, 25)  # Dark space blue
+    SATELLITE_GLOW = (255, 235, 100)  # Light gold
+    
+    # Generate star field (static)
+    stars = []
+    random.seed(42)  # Consistent star positions
+    for i in range(150):
+        x = random.randint(0, WIDTH)
+        y = random.randint(0, HEIGHT)
+        size = random.choice([1, 1, 1, 2])  # Mostly size 1
+        brightness = random.randint(150, 255)
+        stars.append((x, y, size, brightness))
+    
+    # Start animation
+    start_time = time.perf_counter()
+    orbit1_points = []
+    orbit2_points = []
+    particles = []  # Particle trail system
+    
+    while True:
+        elapsed = time.perf_counter() - start_time
+        
+        # Handle events
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                return False
+            elif event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
+                # Exit splash screen on any key or mouse click
+                return True
+        
+        # === CAMERA ANIMATION ===
+        # Smooth zoom effect: start zoomed in, then zoom out
+        if elapsed < CAMERA_ZOOM_DURATION:
+            # Ease-out cubic for smooth deceleration
+            zoom_progress = elapsed / CAMERA_ZOOM_DURATION
+            zoom_eased = 1 - pow(1 - zoom_progress, 3)
+            camera_zoom = 2.5 - (zoom_eased * 1.5)  # 2.5 → 1.0
+        else:
+            camera_zoom = 1.0
+        
+        # Subtle camera drift for dynamic feel
+        camera_drift_x = math.sin(elapsed * 0.3) * 10
+        camera_drift_y = math.cos(elapsed * 0.25) * 8
+        
+        # === RENDER ===
+        screen.fill(SPACE_BG)
+        
+        # Draw star field with parallax effect
+        for x, y, size, brightness in stars:
+            # Add slight twinkle effect
+            twinkle = math.sin(elapsed * 3 + x * 0.01) * 0.2 + 0.8
+            color = (int(brightness * twinkle), int(brightness * twinkle), 255)
+            
+            # Apply parallax (stars move slower than foreground)
+            parallax_factor = 0.3 if size == 1 else 0.5
+            star_x = x + camera_drift_x * parallax_factor
+            star_y = y + camera_drift_y * parallax_factor
+            
+            # Wrap around screen edges
+            star_x = star_x % WIDTH
+            star_y = star_y % HEIGHT
+            
+            if size == 1:
+                screen.set_at((int(star_x), int(star_y)), color)
+            else:
+                pygame.draw.circle(screen, color, (int(star_x), int(star_y)), size)
+        
+        # === EARTH WITH CAMERA EFFECTS ===
+        # Calculate Earth position with camera zoom and drift
+        earth_display_size = int(planet_size * camera_zoom)
+        earth_scaled = pygame.transform.smoothscale(planet_sprite, (earth_display_size, earth_display_size))
+        
+        earth_x = planet_center_x - earth_display_size // 2 + camera_drift_x
+        earth_y = planet_center_y - earth_display_size // 2 + camera_drift_y
+        
+        # Outer glow (scales with camera)
+        glow_size = int((planet_size + 40) * camera_zoom)
+        glow_surface = pygame.Surface((glow_size, glow_size), pygame.SRCALPHA)
+        for i in range(5):
+            alpha = 30 - i * 5
+            radius = int((planet_size // 2 + 20 - i * 3) * camera_zoom)
+            pygame.draw.circle(glow_surface, (100, 150, 255, alpha), 
+                             (glow_size // 2, glow_size // 2), radius)
+        screen.blit(glow_surface, (earth_x - (glow_size - earth_display_size) // 2, 
+                                   earth_y - (glow_size - earth_display_size) // 2))
+        
+        # Planet itself
+        screen.blit(earth_scaled, (earth_x, earth_y))
+        
+        # === ORBIT 1 ANIMATION (Primary - Cyan) ===
+        # Delay orbit appearance until zoom is mostly complete
+        orbit_start_delay = CAMERA_ZOOM_DURATION * 0.5
+        orbit1_progress = min(max(0, elapsed - orbit_start_delay) / ORBIT_TRACE_DURATION, 1.0)
+        num_points1 = int(orbit1_progress * 360)
+        
+        # Generate orbit 1 points progressively
+        if len(orbit1_points) < num_points1:
+            for i in range(len(orbit1_points), num_points1):
+                angle = (i / 360.0) * 2 * math.pi - math.pi / 2  # Start at top
+                x = planet_center_x + orbit1_semi_major * math.cos(angle)
+                y = planet_center_y + orbit1_semi_minor * math.sin(angle)
+                orbit1_points.append((int(x), int(y)))
+        
+        # Draw orbit 1 trail with gradient (with camera effects)
+        if len(orbit1_points) > 1:
+            for i in range(len(orbit1_points) - 1):
+                trail_progress = i / max(len(orbit1_points), 1)
+                alpha = int(100 + trail_progress * 155)
+                
+                # Apply camera drift to orbit points
+                p1 = (orbit1_points[i][0] + camera_drift_x, orbit1_points[i][1] + camera_drift_y)
+                p2 = (orbit1_points[i + 1][0] + camera_drift_x, orbit1_points[i + 1][1] + camera_drift_y)
+                pygame.draw.line(screen, orbit1_color, p1, p2, 2)
+        
+        # === ORBIT 2 ANIMATION (Secondary - Magenta, starts after delay) ===
+        orbit2_delay = orbit_start_delay + 0.4  # Start second orbit slightly after first
+        orbit2_progress = min(max(0, elapsed - orbit2_delay) / ORBIT_TRACE_DURATION, 1.0)
+        num_points2 = int(orbit2_progress * 360)
+        
+        # Generate orbit 2 points (rotated 45 degrees)
+        if len(orbit2_points) < num_points2:
+            for i in range(len(orbit2_points), num_points2):
+                angle = (i / 360.0) * 2 * math.pi + math.pi / 4  # Offset start position
+                # Apply rotation to create tilted orbit
+                base_x = orbit2_semi_major * math.cos(angle)
+                base_y = orbit2_semi_minor * math.sin(angle)
+                
+                # Rotate by 30 degrees
+                rotation = math.pi / 6
+                x = planet_center_x + (base_x * math.cos(rotation) - base_y * math.sin(rotation))
+                y = planet_center_y + (base_x * math.sin(rotation) + base_y * math.cos(rotation))
+                orbit2_points.append((int(x), int(y)))
+        
+        # Draw orbit 2 trail (with camera effects)
+        if len(orbit2_points) > 1:
+            for i in range(len(orbit2_points) - 1):
+                trail_progress = i / max(len(orbit2_points), 1)
+                alpha = int(100 + trail_progress * 155)
+                
+                # Apply camera drift to orbit points
+                p1 = (orbit2_points[i][0] + camera_drift_x, orbit2_points[i][1] + camera_drift_y)
+                p2 = (orbit2_points[i + 1][0] + camera_drift_x, orbit2_points[i + 1][1] + camera_drift_y)
+                pygame.draw.line(screen, orbit2_color, p1, p2, 2)
+        
+        # === PARTICLE SYSTEM ===
+        # Add new particles at satellite positions
+        if orbit1_points and elapsed % 0.02 < 0.017:  # Every few frames
+            particles.append({
+                'pos': list(orbit1_points[-1]),
+                'alpha': 255,
+                'color': orbit1_sat_color,
+                'birth': elapsed,
+                'lifetime': 0.5
+            })
+        
+        if orbit2_points and elapsed % 0.025 < 0.017:
+            particles.append({
+                'pos': list(orbit2_points[-1]),
+                'alpha': 255,
+                'color': orbit2_sat_color,
+                'birth': elapsed,
+                'lifetime': 0.5
+            })
+        
+        # Update and draw particles
+        particles_to_remove = []
+        for particle in particles:
+            age = elapsed - particle['birth']
+            if age > particle['lifetime']:
+                particles_to_remove.append(particle)
+            else:
+                # Fade out
+                particle['alpha'] = int(255 * (1 - age / particle['lifetime']))
+                
+                # Draw particle
+                if particle['alpha'] > 10:
+                    surf = pygame.Surface((6, 6), pygame.SRCALPHA)
+                    pygame.draw.circle(surf, (*particle['color'], particle['alpha']), (3, 3), 3)
+                    screen.blit(surf, (particle['pos'][0] - 3, particle['pos'][1] - 3))
+        
+        # Remove dead particles
+        for particle in particles_to_remove:
+            particles.remove(particle)
+        
+        # === SATELLITE 1 (Orbit 1) ===
+        if orbit1_points:
+            # Apply camera drift to satellite position
+            sat1_pos = (orbit1_points[-1][0] + camera_drift_x, orbit1_points[-1][1] + camera_drift_y)
+            
+            # Satellite glow (pulsing)
+            pulse = math.sin(elapsed * 4) * 0.3 + 0.7
+            glow_radius = int(15 * pulse)
+            glow_surf = pygame.Surface((glow_radius * 2, glow_radius * 2), pygame.SRCALPHA)
+            pygame.draw.circle(glow_surf, (*SATELLITE_GLOW, 60), 
+                             (glow_radius, glow_radius), glow_radius)
+            screen.blit(glow_surf, (int(sat1_pos[0]) - glow_radius, int(sat1_pos[1]) - glow_radius))
+            
+            # Satellite body
+            pygame.draw.circle(screen, orbit1_sat_color, (int(sat1_pos[0]), int(sat1_pos[1])), 7)
+            pygame.draw.circle(screen, (255, 255, 255), (int(sat1_pos[0]), int(sat1_pos[1])), 3)
+        
+        # === SATELLITE 2 (Orbit 2) ===
+        if orbit2_points:
+            # Apply camera drift to satellite position
+            sat2_pos = (orbit2_points[-1][0] + camera_drift_x, orbit2_points[-1][1] + camera_drift_y)
+            
+            # Satellite glow (different pulse phase)
+            pulse2 = math.sin(elapsed * 4.5 + math.pi) * 0.3 + 0.7
+            glow_radius2 = int(14 * pulse2)
+            glow_surf2 = pygame.Surface((glow_radius2 * 2, glow_radius2 * 2), pygame.SRCALPHA)
+            pygame.draw.circle(glow_surf2, (*orbit2_sat_color, 60), 
+                             (glow_radius2, glow_radius2), glow_radius2)
+            screen.blit(glow_surf2, (int(sat2_pos[0]) - glow_radius2, int(sat2_pos[1]) - glow_radius2))
+            
+            # Satellite body
+            pygame.draw.circle(screen, orbit2_sat_color, (int(sat2_pos[0]), int(sat2_pos[1])), 6)
+            pygame.draw.circle(screen, (255, 255, 255), (int(sat2_pos[0]), int(sat2_pos[1])), 2)
+        
+        # === LOGO FADE IN ===
+        if elapsed > LOGO_FADE_START:
+            logo_progress = (elapsed - LOGO_FADE_START) / LOGO_FADE_DURATION
+            logo_alpha = int(min(logo_progress, 1.0) * 255)
+            
+            # Title
+            title_font = pygame.font.SysFont("arial", 84, bold=True)
+            title_text = "ORBITLAB"
+            
+            # Shadow for depth
+            shadow_surf = title_font.render(title_text, True, (0, 0, 0))
+            shadow_surf.set_alpha(logo_alpha)
+            shadow_rect = shadow_surf.get_rect(center=(WIDTH // 2 + 3, HEIGHT - 115 + 3))
+            screen.blit(shadow_surf, shadow_rect)
+            
+            # Main title
+            title_surf = title_font.render(title_text, True, (255, 255, 255))
+            title_surf.set_alpha(logo_alpha)
+            title_rect = title_surf.get_rect(center=(WIDTH // 2, HEIGHT - 115))
+            screen.blit(title_surf, title_rect)
+            
+            
+            # Version - moved higher to avoid overlap with prompt
+            version_font = pygame.font.SysFont("consolas", 14)
+            version_text = "v1.5 • Gymnasiearbete 2026"
+            version_surf = version_font.render(version_text, True, (100, 120, 150))
+            version_surf.set_alpha(int(logo_alpha * 0.7))
+            version_rect = version_surf.get_rect(center=(WIDTH // 2, HEIGHT - 75))
+            screen.blit(version_surf, version_rect)
+        
+        # === PROMINENT "PRESS ANY KEY" PROMPT ===
+        if elapsed > PROMPT_FADE_START:
+            # Calculate pulsing animation for prompt
+            prompt_progress = elapsed - PROMPT_FADE_START
+            base_alpha = min(prompt_progress / 0.4, 1.0)  # Fade in over 0.4s
+            pulse_effect = math.sin(elapsed * 3) * 0.3 + 0.7  # Pulsing
+            prompt_alpha = int(base_alpha * pulse_effect * 255)
+            
+            # Main prompt text - larger and more prominent
+            prompt_font = pygame.font.SysFont("consolas", 20, bold=True)
+            prompt_text = "PRESS ANY KEY TO CONTINUE"
+            prompt_surf = prompt_font.render(prompt_text, True, (255, 255, 255))
+            prompt_surf.set_alpha(prompt_alpha)
+            prompt_rect = prompt_surf.get_rect(center=(WIDTH // 2, HEIGHT - 25))
+            
+            # Draw glowing background box
+            if base_alpha > 0.5:
+                box_padding = 15
+                box_rect = pygame.Rect(
+                    prompt_rect.left - box_padding,
+                    prompt_rect.top - box_padding // 2,
+                    prompt_rect.width + box_padding * 2,
+                    prompt_rect.height + box_padding
+                )
+                box_alpha = int(base_alpha * pulse_effect * 100)
+                pygame.draw.rect(screen, (50, 100, 200, box_alpha), box_rect, border_radius=8)
+                pygame.draw.rect(screen, (100, 200, 255), box_rect, 2, border_radius=8)
+            
+            screen.blit(prompt_surf, prompt_rect)
+        
+        pygame.display.flip()
+        clock.tick(60)
+    
+    return True
+
+
 def run_main_menu(
     screen: pygame.Surface,
     clock: pygame.time.Clock,
@@ -997,7 +1320,7 @@ def run_main_menu(
         # Layout Calculations
         # =====================
         panel_margin = 30
-        panel_top = 110
+        panel_top = 30
         footer_height = 75
         panel_bottom = HEIGHT - footer_height - 15
         
@@ -1078,23 +1401,6 @@ def run_main_menu(
         drift_x = elapsed * 5000000  # Horizontal drift speed
         drift_y = elapsed * 3000000  # Vertical drift speed
         starfield.draw(screen, drift_x, drift_y)
-        
-        # Title with shadow
-        title_text = "ORBITLAB"
-        # Shadow (offset by 2 pixels)
-        shadow_surf = title_font.render(title_text, True, (0, 0, 0))
-        shadow_rect = shadow_surf.get_rect(center=(WIDTH // 2 + 2, 50 + 2))
-        screen.blit(shadow_surf, shadow_rect)
-        # Main title
-        title_surf = title_font.render(title_text, True, TEXT_WHITE)
-        title_rect = title_surf.get_rect(center=(WIDTH // 2, 50))
-        screen.blit(title_surf, title_rect)
-        
-        # Subtitle
-        subtitle_text = "av Axel Jönsson"
-        subtitle_surf = font_small.render(subtitle_text, True, MENU_SUBTITLE_COLOR)
-        subtitle_rect = subtitle_surf.get_rect(center=(WIDTH // 2, 90))
-        screen.blit(subtitle_surf, subtitle_rect)
         
         # =====================
         # Main Container Panel
@@ -1769,6 +2075,12 @@ def main():
         state = "running"
         return_to_menu = False
         escape_radius_limit = ESCAPE_RADIUS_FACTOR * get_default_r0()
+
+    # ========= SPLASH SCREEN =========
+    # Show splash screen on first launch
+    if not run_splash_screen(screen, clock):
+        pygame.quit()
+        sys.exit()
 
     # ========= OUTER LOOP: MENU -> SIMULATION -> MENU =========
     while True:
