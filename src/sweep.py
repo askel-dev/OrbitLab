@@ -1,4 +1,4 @@
-"""Parameter sweep that classifies orbit types for different launch setups (fast or simulated)."""
+"""Parametersvep som klassificerar bantyper för olika startförhållanden (analytiskt eller simulerat)."""
 from __future__ import annotations
 
 import math
@@ -11,34 +11,34 @@ from matplotlib.colors import ListedColormap
 
 from physics import G, M_EARTH, MU_EARTH, EARTH_RADIUS, get_acceleration, rk4_step
 
-# Use Earth constants for sweep
+# Använd jordens konstanter
 M = M_EARTH
 MU = MU_EARTH
 
 # ===========================
-# PHYSICS CONSTANTS
+# FYSIKALISKA KONSTANTER
 # ===========================
-R0 = np.array([7_000_000.0, 0.0])  # 7000 km orbit start distance
+R0 = np.array([7_000_000.0, 0.0])  # Startavstånd: 7000 km från jordens centrum
 
 # ===========================
-# SWEEP SETTINGS
+# SVEPINSTÄLLNINGAR
 # ===========================
 SPEED_RANGE = (6_500.0, 12_500.0)   # m/s
-ANGLE_RANGE = (0.0, math.pi / 2.0)  # radians
-SPEED_POINTS = 300                  # horizontal resolution (x-axis)
-ANGLE_POINTS = 20                   # vertical resolution (y-axis)
+ANGLE_RANGE = (0.0, math.pi / 2.0)  # radianer
+SPEED_POINTS = 300                  # horisontell upplösning (x-axel)
+ANGLE_POINTS = 20                   # vertikal upplösning (y-axel)
 
-MODE = "fast"       # "fast" = analytical (1 sec), "simulated" = RK4 (slower)
+MODE = "fast"       # "fast" = analytisk (1 sek), "simulated" = RK4 (långsammare)
 DT = 1.0
 MAX_STEPS = 5000
 ESCAPE_RADIUS_FACTOR = 8.0
 
-ENERGY_TOL = 3e5  # ±300 000 J/kg → synlig gul zon
+ENERGY_TOL = 3e5  # ±300 000 J/kg -> synlig gul zon
 
 FIGURES_DIR = Path("figures")
 
 # ===========================
-# PHYSICS HELPERS
+# FYSIKALISKA HJÄLPFUNKTIONER
 # ===========================
 def energy_specific(r: np.ndarray, v: np.ndarray) -> float:
     rmag = math.hypot(r[0], r[1])
@@ -46,20 +46,20 @@ def energy_specific(r: np.ndarray, v: np.ndarray) -> float:
     return 0.5 * vmag2 - MU / rmag
 
 # ===========================
-# CLASSIFICATION
+# KLASSIFICERING
 # ===========================
 def classify_fast(speed: float) -> int:
-    """Classify orbit type from start energy only."""
+    """Klassificera bantyp baserat på startenergi."""
     eps0 = 0.5 * speed**2 - MU / np.linalg.norm(R0)
     if eps0 < -ENERGY_TOL:
-        return 0  # Ellips
+        return 0  # Elliptisk
     elif eps0 > ENERGY_TOL:
-        return 2  # Hyperbel
+        return 2  # Hyperbolisk
     else:
-        return 1  # Parabel (inom ±ENERGY_TOL)
+        return 1  # Parabolisk (inom ±ENERGY_TOL)
 
 def classify_simulated(speed: float, angle_rad: float, escape_radius: float) -> int:
-    """Numerical RK4 integration for classification."""
+    """Numerisk RK4-integration för klassificering."""
     r = R0.copy()
     v = np.array([speed * math.cos(angle_rad), speed * math.sin(angle_rad)])
     for _ in range(MAX_STEPS):
@@ -79,7 +79,7 @@ def classify_simulated(speed: float, angle_rad: float, escape_radius: float) -> 
         return 1
 
 # ===========================
-# MAIN SWEEP
+# HUVUDSVEP
 # ===========================
 def run_sweep() -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     speeds = np.linspace(*SPEED_RANGE, SPEED_POINTS)
@@ -106,11 +106,11 @@ def run_sweep() -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     return speeds, angles, results
 
 # ===========================
-# PLOTTNING
+# VISUALISERING
 # ===========================
 def plot_heatmap(speeds: np.ndarray, angles: np.ndarray, results: np.ndarray) -> None:
     FIGURES_DIR.mkdir(parents=True, exist_ok=True)
-    cmap = ListedColormap(["#2f9e44", "#ffd43b", "#f03e3e"])  # green, yellow, red
+    cmap = ListedColormap(["#2f9e44", "#ffd43b", "#f03e3e"])  # grön, gul, röd
 
     fig, ax = plt.subplots(figsize=(10, 6))
     extent = [speeds.min(), speeds.max(), math.degrees(angles.min()), math.degrees(angles.max())]
@@ -128,7 +128,7 @@ def plot_heatmap(speeds: np.ndarray, angles: np.ndarray, results: np.ndarray) ->
     print(f"\nHeatmap sparad till {out}")
 
 # ===========================
-# MAIN
+# HUVUDPROGRAM
 # ===========================
 def main() -> None:
     v_esc = math.sqrt(2 * MU / np.linalg.norm(R0))

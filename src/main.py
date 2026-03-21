@@ -9,6 +9,7 @@ numerical integration and real-time visualization.
 Version: 1.5
 """
 
+import argparse
 import math
 import os
 import random
@@ -22,10 +23,18 @@ from pygame.locals import DOUBLEBUF, FULLSCREEN, NOFRAME, RESIZABLE
 from collections import deque
 from dataclasses import dataclass
 
-from physics import G, rk4_step, euler_step
+from physics import G, rk4_step, euler_step, get_acceleration
 from logging_utils import RunLogger
 
 from planet_generator import get_preset, get_planet_sprite, Planet
+
+# =======================
+#   COMMAND-LINE ARGS
+# =======================
+_parser = argparse.ArgumentParser(description="OrbitLab – Interactive Orbit Simulator")
+_parser.add_argument("--demo", action="store_true", help="Run auto-demo mode cycling through scenarios")
+_parser.add_argument("--record", action="store_true", help="Save frames to disk during demo (demo/frames/)")
+CLI_ARGS = _parser.parse_args()
 
 # =======================
 #   CURRENT PLANET
@@ -298,6 +307,28 @@ VEL_ARROW_MIN_PIXELS = 0
 VEL_ARROW_MAX_PIXELS = 90
 VEL_ARROW_HEAD_LENGTH = 10
 VEL_ARROW_HEAD_ANGLE_DEG = 26
+GRAV_ARROW_COLOR = (100, 180, 255)
+GRAV_ARROW_SCALE = 6.0
+GRAV_ARROW_MIN_PIXELS = 0
+GRAV_ARROW_MAX_PIXELS = 70
+GRAV_ARROW_HEAD_LENGTH = 8
+GRAV_ARROW_HEAD_ANGLE_DEG = 26
+# Trail & future orbit settings
+PAST_TRAIL_MAXLEN = 2000
+PAST_TRAIL_RECORD_INTERVAL = 3
+PAST_TRAIL_COLOR = (180, 220, 255)
+PAST_TRAIL_WIDTH = 2
+PAST_TRAIL_MAX_RENDERED = 600
+FUTURE_ORBIT_DASH_LENGTH = 12
+FUTURE_ORBIT_GAP_LENGTH = 8
+FUTURE_ORBIT_COLOR = (255, 255, 255, 120)
+# Asymptote settings
+ASYMPTOTE_COLOR = (255, 255, 255, 50)
+ASYMPTOTE_LENGTH_PX = 3000
+# Terminator settings
+SUN_DIRECTION_DEG = 315.0
+TERMINATOR_GRADIENT_STEPS = 5
+TERMINATOR_BASE_ALPHA = 120
 # Menu color palette
 MENU_BACKGROUND = (10, 15, 30)
 BUTTON_IDLE = (30, 40, 60, 200)
@@ -469,14 +500,16 @@ def draw_satellite(surface: pygame.Surface, position: tuple[int, int], radius: i
     pygame.draw.circle(surface, SATELLITE_COLOR, position, radius)
 
 
-def draw_velocity_arrow(
+def draw_arrow(
     surface: pygame.Surface,
     start: tuple[int, int],
     end: tuple[int, int],
+    color: tuple[int, int, int],
     head_length: int,
     head_angle_deg: float,
+    line_width: int = 2,
 ) -> None:
-    pygame.draw.line(surface, VEL_ARROW_COLOR, start, end, 2)
+    pygame.draw.line(surface, color, start, end, line_width)
     angle = math.atan2(start[1] - end[1], end[0] - start[0])
     head_angle = math.radians(head_angle_deg)
     left = (
@@ -487,7 +520,7 @@ def draw_velocity_arrow(
         int(end[0] - head_length * math.cos(angle + head_angle)),
         int(end[1] + head_length * math.sin(angle + head_angle)),
     )
-    pygame.draw.polygon(surface, VEL_ARROW_COLOR, [end, left, right])
+    pygame.draw.polygon(surface, color, [end, left, right])
 
 
 def draw_marker_pin(
@@ -531,6 +564,80 @@ def draw_orbit_line(
     else:
         pygame.draw.lines(surface, color, False, points, width)
         pygame.draw.aalines(surface, color, False, points)
+
+
+def draw_dashed_line(
+    surface: pygame.Surface,
+    color: tuple[int, int, int, int],
+    points: list[tuple[int, int]],
+    width: int,
+    dash_len: int = 12,
+    gap_len: int = 8,
+) -> None:
+    """Draw a dashed polyline through the given screen-space points."""
+    if len(points) < 2:
+        return
+    cycle = dash_len + gap_len
+    accumulated = 0.0
+    for i in range(len(points) - 1):
+        x0, y0 = points[i]
+        x1, y1 = points[i + 1]
+        seg_dx = x1 - x0
+        seg_dy = y1 - y0
+        seg_len = math.hypot(seg_dx, seg_dy)
+        if seg_len < 0.5:
+            continue
+        nx, ny = seg_dx / seg_len, seg_dy / seg_len
+        seg_start = 0.0
+        while seg_start < seg_len:
+            phase = accumulated % cycle
+            if phase < dash_len:
+                # In dash phase
+                remaining_dash = dash_len - phase
+                draw_end = min(seg_start + remaining_dash, seg_len)
+                sx = int(x0 + nx * seg_start)
+                sy = int(y0 + ny * seg_start)
+                ex = int(x0 + nx * draw_end)
+                ey = int(y0 + ny * draw_end)
+                if abs(sx - ex) > 0 or abs(sy - ey) > 0:
+                    pygame.draw.line(surface, color, (sx, sy), (ex, ey), width)
+                advance = draw_end - seg_start
+            else:
+                # In gap phase
+                remaining_gap = cycle - phase
+                advance = min(remaining_gap, seg_len - seg_start)
+            accumulated += advance
+            seg_start += advance
+
+
+def draw_fading_trail(
+    surface: pygame.Surface,
+    color: tuple[int, int, int],
+    points: list[tuple[int, int]],
+    width: int,
+    max_alpha: int = 200,
+    min_alpha: int = 10,
+) -> None:
+    """Draw a polyline that fades from transparent (oldest) to opaque (newest)."""
+    n = len(points)
+    if n < 2:
+        return
+    # Batch segments into alpha bands for performance
+    num_segments = n - 1
+    num_bands = min(30, num_segments)
+    for band in range(num_bands):
+        start_idx = band * num_segments // num_bands
+        end_idx_seg = (band + 1) * num_segments // num_bands
+        # We need end_idx_seg + 1 points to draw end_idx_seg - start_idx segments
+        pt_start = start_idx
+        pt_end = end_idx_seg + 1
+        if pt_end - pt_start < 2:
+            continue
+        t = (band + 0.5) / num_bands
+        alpha = int(min_alpha + (max_alpha - min_alpha) * t)
+        band_points = points[pt_start:pt_end]
+        if len(band_points) >= 2:
+            pygame.draw.lines(surface, (*color, alpha), False, band_points, width)
 
 
 def downsample_points(
@@ -828,40 +935,44 @@ def draw_planet_night_side(
     surface: pygame.Surface,
     position: tuple[int, int],
     radius_px: int,
-    shadow_side: str = "left",
-    shadow_alpha: int = 100,
+    sun_angle_deg: float = 315.0,
+    shadow_alpha: int = 120,
+    gradient_steps: int = 5,
 ) -> None:
-    """
-    Draw a semi-transparent shadow on one half of the planet to simulate 3D shading.
-    
-    Args:
-        surface: The surface to draw on
-        position: Center position of the planet
-        radius_px: Planet radius in pixels
-        shadow_side: "left" or "right" - which side is in shadow
-        shadow_alpha: Transparency of the shadow (0-255)
-    """
-    if radius_px <= 0:
+    """Draw a gradient shadow on the planet opposite the sun direction for 3D depth."""
+    if radius_px <= 2:
         return
-    
-    diameter = radius_px * 2
-    
-    # Create a circular mask surface
-    shadow_surface = pygame.Surface((diameter, diameter), pygame.SRCALPHA)
-    
-    # Draw the full circle mask
-    pygame.draw.circle(shadow_surface, (0, 0, 0, shadow_alpha), (radius_px, radius_px), radius_px)
-    
-    # Clear the lit half by drawing a transparent rectangle over it
-    if shadow_side == "left":
-        # Shadow on left, so clear the right half
-        pygame.draw.rect(shadow_surface, (0, 0, 0, 0), (radius_px, 0, radius_px, diameter))
-    else:
-        # Shadow on right, so clear the left half
-        pygame.draw.rect(shadow_surface, (0, 0, 0, 0), (0, 0, radius_px, diameter))
-    
-    shadow_rect = shadow_surface.get_rect(center=position)
-    surface.blit(shadow_surface, shadow_rect)
+
+    sun_rad = math.radians(sun_angle_deg)
+    sun_dx = math.cos(sun_rad)
+    sun_dy = math.sin(sun_rad)
+
+    padding = int(radius_px * 0.5)
+    size = radius_px * 2 + padding * 2
+    cx, cy = size // 2, size // 2
+
+    shadow_surface = pygame.Surface((size, size), pygame.SRCALPHA)
+
+    for i in range(gradient_steps):
+        t = (i + 1) / gradient_steps
+        offset_fraction = 0.05 + 0.40 * t
+        offset_x = -sun_dx * radius_px * offset_fraction
+        offset_y = sun_dy * radius_px * offset_fraction
+        alpha = int(shadow_alpha * t)
+        draw_cx = int(cx + offset_x)
+        draw_cy = int(cy + offset_y)
+        pygame.draw.circle(shadow_surface, (0, 0, 0, alpha), (draw_cx, draw_cy), radius_px)
+
+    # Clip to planet circle: erase everything outside the planet boundary
+    mask_surface = pygame.Surface((size, size), pygame.SRCALPHA)
+    pygame.draw.circle(mask_surface, (255, 255, 255, 255), (cx, cy), radius_px)
+    # Keep only pixels inside the planet circle
+    clipped = pygame.Surface((size, size), pygame.SRCALPHA)
+    clipped.blit(shadow_surface, (0, 0))
+    clipped.blit(mask_surface, (0, 0), special_flags=pygame.BLEND_RGBA_MIN)
+
+    rect = clipped.get_rect(center=position)
+    surface.blit(clipped, rect)
 
 
 # =======================
@@ -941,7 +1052,7 @@ def wrap_text(text: str, font: pygame.font.Font, max_width: int) -> list[str]:
     return lines
 
 
-def run_splash_screen(screen: pygame.Surface, clock: pygame.time.Clock) -> bool:
+def run_splash_screen(screen: pygame.Surface, clock: pygame.time.Clock, auto_dismiss: float = 0) -> bool:
     """
     Animated splash screen showing orbits being traced around Earth with particle effects.
     Returns True if user wants to continue, False if user wants to quit.
@@ -1009,7 +1120,11 @@ def run_splash_screen(screen: pygame.Surface, clock: pygame.time.Clock) -> bool:
             elif event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
                 # Exit splash screen on any key or mouse click
                 return True
-        
+
+        # Auto-dismiss after specified duration
+        if auto_dismiss > 0 and elapsed >= auto_dismiss:
+            return True
+
         # === CAMERA ANIMATION ===
         # Smooth zoom effect: start zoomed in, then zoom out
         if elapsed < CAMERA_ZOOM_DURATION:
@@ -1628,9 +1743,25 @@ def run_main_menu(
 # =======================
 #   MAIN FUNCTION
 # =======================
+# =======================
+#   DEMO MODE CONFIG
+# =======================
+DEMO_SCENARIOS = [
+    # (planet_name, scenario_key, display_label, duration_seconds, speed_multiplier, zoom_factor)
+    ("earth",   "leo",        "Jorden - Cirkulär omloppsbana",  9.0, 1000.0, 1),
+    ("mars",    "elliptical", "Mars - Elliptisk omloppsbana",   14.0, 5000.0, 0.75),
+    ("jupiter", "escape",     "Jupiter - Flyktbana",            10.0, 2000.0, 0.70),
+    ("moon",    "suborbital", "Månen - Suborbital bana",        10.0, 1000.0, 2.2),
+]
+
+DEMO_FADE_DURATION = 1.25  # seconds for fade-in/out transitions
+DEMO_LABEL_FONT_SIZE = 32
+DEMO_SUBLABEL_FONT_SIZE = 20
+
+
 def main():
     pygame.init()
-    pygame.display.set_caption("OrbitLab – Interactive Orbit Simulator")
+    pygame.display.set_caption("OrbitLab - Interactive Orbit Simulator")
     
     font_fps = pygame.font.SysFont("consolas", 14)
 
@@ -1720,7 +1851,7 @@ def main():
     real_time_speed = REAL_TIME_SPEED
     grid_overlay_enabled = False
     show_velocity_arrow = True
-    camera_mode = "earth"
+    camera_mode = "satellite" 
     camera_center = np.array([0.0, 0.0], dtype=float)
     camera_target = np.array([0.0, 0.0], dtype=float)
     is_dragging_camera = False
@@ -1728,6 +1859,8 @@ def main():
 
     orbit_prediction_period: float | None = None
     orbit_prediction_points: list[tuple[float, float]] = []
+    past_trail: deque[tuple[float, float]] = deque(maxlen=PAST_TRAIL_MAXLEN)
+    past_trail_step_counter = 0
 
     orbit_markers: deque[tuple[str, float, float, float]] = deque(maxlen=20)
     impact_info: dict[str, float] | None = None
@@ -1760,6 +1893,7 @@ def main():
         nonlocal camera_center, orbit_markers, camera_target
         nonlocal camera_mode, is_dragging_camera
         nonlocal orbit_prediction_period, orbit_prediction_points
+        nonlocal past_trail, past_trail_step_counter
         nonlocal impact_info, shock_ring_start, impact_freeze_time
         nonlocal impact_overlay_reveal_time, impact_overlay_visible_since
         nonlocal show_velocity_arrow
@@ -1782,6 +1916,8 @@ def main():
         camera_target[:] = camera_center
         is_dragging_camera = False
         orbit_prediction_period, orbit_prediction_points = compute_orbit_prediction(r, v, current_planet.mu)
+        past_trail = deque(maxlen=PAST_TRAIL_MAXLEN)
+        past_trail_step_counter = 0
         impact_info = None
         shock_ring_start = None
         impact_freeze_time = None
@@ -2031,6 +2167,7 @@ def main():
         nonlocal orbit_markers, impact_info, shock_ring_start
         nonlocal impact_freeze_time, impact_overlay_reveal_time, impact_overlay_visible_since
         nonlocal accumulator, last_time, state, return_to_menu, escape_radius_limit
+        nonlocal past_trail, past_trail_step_counter
         
         # Update planet
         current_planet = selected_planet
@@ -2065,6 +2202,8 @@ def main():
         is_dragging_camera = False
         orbit_prediction_period, orbit_prediction_points = compute_orbit_prediction(r, v, current_planet.mu)
         orbit_markers.clear()
+        past_trail.clear()
+        past_trail_step_counter = 0
         impact_info = None
         shock_ring_start = None
         impact_freeze_time = None
@@ -2076,29 +2215,138 @@ def main():
         return_to_menu = False
         escape_radius_limit = ESCAPE_RADIUS_FACTOR * get_default_r0()
 
+    # ========= DEMO MODE =========
+    demo_mode = CLI_ARGS.demo
+    demo_record = CLI_ARGS.record
+    demo_step_index = 0
+    demo_step_start_time = 0.0
+    demo_label_font = pygame.font.SysFont("arial", DEMO_LABEL_FONT_SIZE, bold=True)
+    demo_sublabel_font = pygame.font.SysFont("arial", DEMO_SUBLABEL_FONT_SIZE)
+    demo_frame_counter = 0
+
+    if demo_record:
+        os.makedirs("demo/frames", exist_ok=True)
+
+    demo_ending = False
+    demo_end_time = 0.0
+    DEMO_END_DELAY = 5.0  # seconds to wait after last scenario before quitting
+
+    def demo_setup_current_step():
+        """Setup simulation for the current demo step."""
+        nonlocal demo_step_start_time, real_time_speed, camera_mode, ppm, ppm_target
+        planet_name, scenario_key, _, _, speed_mult, zoom_factor = DEMO_SCENARIOS[demo_step_index]
+        planet = get_preset(planet_name)
+        scenarios = get_scenarios_for_planet(planet)
+        scenario = next((s for s in scenarios if s.key == scenario_key), scenarios[0])
+        setup_simulation_from_selection(planet, scenario)
+        real_time_speed = speed_mult
+        camera_mode = "satellite"
+        
+        # Set target zoom, but start the actual view 35% smaller 
+        # so the camera smoothly zooms in during the fade-in
+        ppm_target = ppm * zoom_factor
+        ppm = ppm_target * 0.65
+        
+        init_run_logging()
+        demo_step_start_time = time.perf_counter()
+
+    # Full-screen black surface for fade-to-black transitions
+    demo_fade_surface = pygame.Surface(current_size)
+    demo_fade_surface.fill((0, 0, 0))
+
+    def demo_draw_overlay(surface: pygame.Surface):
+        """Draw demo mode text overlay and full-screen fade-to-black transition."""
+        if demo_ending:
+            # Keep showing the last scenario during end delay (no overlay)
+            return
+        if demo_step_index >= len(DEMO_SCENARIOS):
+            return
+        _, _, label, duration, _, _ = DEMO_SCENARIOS[demo_step_index]
+        elapsed = time.perf_counter() - demo_step_start_time
+
+        # Text fade alpha (0 = invisible, 255 = fully visible)
+        if elapsed < DEMO_FADE_DURATION:
+            alpha = int(255 * (elapsed / DEMO_FADE_DURATION))
+        elif elapsed > duration - DEMO_FADE_DURATION:
+            alpha = int(255 * max(0, (duration - elapsed) / DEMO_FADE_DURATION))
+        else:
+            alpha = 255
+
+        # Full-screen fade-to-black (0 = no overlay, 255 = fully black)
+        if elapsed < DEMO_FADE_DURATION:
+            fade_alpha = int(255 * (1.0 - elapsed / DEMO_FADE_DURATION))
+        elif elapsed > duration - DEMO_FADE_DURATION:
+            fade_alpha = int(255 * min(1.0, (elapsed - (duration - DEMO_FADE_DURATION)) / DEMO_FADE_DURATION))
+        else:
+            fade_alpha = 0
+
+        # Scenario label (top center)
+        label_surf = demo_label_font.render(label, True, (255, 255, 255))
+        label_surf.set_alpha(alpha)
+        label_rect = label_surf.get_rect(center=(WIDTH // 2, 50))
+        surface.blit(label_surf, label_rect)
+
+        # Step counter (top right)
+        step_text = f"{demo_step_index + 1} / {len(DEMO_SCENARIOS)}"
+        step_surf = demo_sublabel_font.render(step_text, True, (180, 180, 180))
+        step_surf.set_alpha(alpha)
+        step_rect = step_surf.get_rect(topright=(WIDTH - 20, 20))
+        surface.blit(step_surf, step_rect)
+
+        # "OrbitLab" watermark (bottom left)
+        wm_surf = demo_sublabel_font.render(" Demonstration", True, (140, 140, 140))
+        wm_surf.set_alpha(int(alpha * 0.6))
+        wm_rect = wm_surf.get_rect(bottomleft=(20, HEIGHT - 20))
+        surface.blit(wm_surf, wm_rect)
+
+        # Vector Legend (bottom right)
+        legend_surf = pygame.Surface((200, 60), pygame.SRCALPHA)
+        legend_surf.fill((0, 0, 0, 0))
+        
+        vel_label = demo_sublabel_font.render("Hastighet (v)", True, (180, 180, 180))
+        grav_label = demo_sublabel_font.render("Gravitationskraft (g)", True, (180, 180, 180))
+        
+        # Velocity arrow (Orange)
+        pygame.draw.line(legend_surf, VEL_ARROW_COLOR, (10, 15), (35, 15), 3)
+        pygame.draw.polygon(legend_surf, VEL_ARROW_COLOR, [(35, 15), (28, 10), (28, 20)])
+        legend_surf.blit(vel_label, (45, 15 - vel_label.get_height() // 2))
+
+        # Gravity arrow (Blue)
+        pygame.draw.line(legend_surf, GRAV_ARROW_COLOR, (10, 45), (35, 45), 3)
+        pygame.draw.polygon(legend_surf, GRAV_ARROW_COLOR, [(35, 45), (28, 40), (28, 50)])
+        legend_surf.blit(grav_label, (45, 45 - grav_label.get_height() // 2))
+        
+        legend_surf.set_alpha(alpha)
+        legend_rect = legend_surf.get_rect(bottomright=(WIDTH - 20, HEIGHT - 20))
+        surface.blit(legend_surf, legend_rect)
+
+        # Apply full-screen fade overlay on top of everything
+        if fade_alpha > 0:
+            demo_fade_surface.set_alpha(fade_alpha)
+            surface.blit(demo_fade_surface, (0, 0))
+
     # ========= SPLASH SCREEN =========
-    # Show splash screen on first launch
-    if not run_splash_screen(screen, clock):
+    if not run_splash_screen(screen, clock, auto_dismiss=5.0 if demo_mode else 0):
         pygame.quit()
         sys.exit()
 
+    if demo_mode:
+        # After splash, jump straight to first demo scenario
+        demo_setup_current_step()
+
     # ========= OUTER LOOP: MENU -> SIMULATION -> MENU =========
     while True:
-        # Show main menu and get selection
-        menu_result = run_main_menu(screen, clock, current_planet)
-        
-        if menu_result is None:
-            # User quit from menu
-            pygame.quit()
-            sys.exit()
-        
-        selected_planet, selected_scenario = menu_result
-        
-        # Setup simulation based on selection
-        setup_simulation_from_selection(selected_planet, selected_scenario)
-        
-        # Initialize logging for the new run
-        init_run_logging()
+        if not demo_mode:
+            # Show main menu and get selection
+            menu_result = run_main_menu(screen, clock, current_planet)
+
+            if menu_result is None:
+                pygame.quit()
+                sys.exit()
+
+            selected_planet, selected_scenario = menu_result
+            setup_simulation_from_selection(selected_planet, selected_scenario)
+            init_run_logging()
 
         # ========= SIMULATION LOOP =========
         while True:
@@ -2217,13 +2465,46 @@ def main():
             # Check if we should return to menu
             if return_to_menu:
                 close_logger()
+                if demo_mode:
+                    # In demo mode, ESC quits the app
+                    quit_app()
                 break
+
+            # === DEMO AUTO-ADVANCE ===
+            if demo_mode and demo_ending:
+                # Waiting for end delay after last scenario
+                if time.perf_counter() - demo_end_time >= DEMO_END_DELAY:
+                    quit_app()
+            elif demo_mode and demo_step_index < len(DEMO_SCENARIOS):
+                _, _, _, step_duration, _, _ = DEMO_SCENARIOS[demo_step_index]
+                demo_elapsed = time.perf_counter() - demo_step_start_time
+                # Also advance on impact
+                if demo_elapsed >= step_duration or state == "impact":
+                    demo_step_index += 1
+                    if demo_step_index >= len(DEMO_SCENARIOS):
+                        # Demo complete — start end delay with fade to black
+                        demo_ending = True
+                        demo_end_time = time.perf_counter()
+                    else:
+                        demo_setup_current_step()
+                        continue
 
             # === PHYSICS UPDATE ===
             now = time.perf_counter()
             frame_dt_real = now - last_time
             last_time = now
-            sim_dt_target = frame_dt_real * real_time_speed
+            
+            # Smoothly ease in the simulation speed during the demo fade-in
+            effective_speed = real_time_speed
+            if demo_mode and not demo_ending and demo_step_index < len(DEMO_SCENARIOS):
+                elapsed = now - demo_step_start_time
+                if elapsed < DEMO_FADE_DURATION:
+                    progress = elapsed / DEMO_FADE_DURATION
+                    ease = progress ** 3.0  # Cubic ease-in
+                    # Start at 2% speed so it doesn't look completely frozen
+                    effective_speed = real_time_speed * max(0.02, ease)
+
+            sim_dt_target = frame_dt_real * effective_speed
             accumulator += sim_dt_target
 
             if paused:
@@ -2241,6 +2522,9 @@ def main():
                     elif integrator == "Euler":
                         r, v = euler_step(r, v, dt_step, current_planet.mu)
                     t_sim += dt_step
+                    past_trail_step_counter += 1
+                    if past_trail_step_counter % PAST_TRAIL_RECORD_INTERVAL == 0:
+                        past_trail.append((float(r[0]), float(r[1])))
                     rmag = float(np.linalg.norm(r))
                     
                     event_type: str | None = None
@@ -2372,7 +2656,20 @@ def main():
             rmag = float(np.linalg.norm(r))
             planet_screen_pos = world_to_screen(0.0, 0.0, ppm, camera_center_tuple)
 
-            # Draw predicted orbit
+            # Draw past trail (fading solid line behind the satellite)
+            if len(past_trail) >= 2:
+                trail_list = list(past_trail)
+                trail_sampled = downsample_points(trail_list, PAST_TRAIL_MAX_RENDERED)
+                trail_screen = [
+                    world_to_screen(px, py, ppm, camera_center_tuple)
+                    for px, py in trail_sampled
+                ]
+                if len(trail_screen) >= 2:
+                    trail_surface = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
+                    draw_fading_trail(trail_surface, PAST_TRAIL_COLOR, trail_screen, PAST_TRAIL_WIDTH)
+                    screen.blit(trail_surface, (0, 0))
+
+            # Draw predicted orbit (dashed future trajectory)
             if orbit_prediction_points:
                 if orbit_prediction_period is None or orbit_prediction_period <= 0.0:
                     reveal_fraction = 1.0
@@ -2390,7 +2687,27 @@ def main():
                     for px, py in sampled_points
                 ]
                 if len(screen_points) >= 2:
-                    draw_orbit_line(orbit_layer, ORBIT_PRIMARY_COLOR, screen_points, ORBIT_LINE_WIDTH)
+                    orbit_layer.fill((0, 0, 0, 0))
+                    draw_dashed_line(orbit_layer, FUTURE_ORBIT_COLOR, screen_points, ORBIT_LINE_WIDTH,
+                                     FUTURE_ORBIT_DASH_LENGTH, FUTURE_ORBIT_GAP_LENGTH)
+
+                    # Hyperbolic asymptote: faint line showing escape heading
+                    eps_now = energy_specific(r, v, current_planet.mu)
+                    if eps_now > 0 and len(orbit_prediction_points) >= 2:
+                        p_last = orbit_prediction_points[-1]
+                        p_prev = orbit_prediction_points[-2]
+                        adx = p_last[0] - p_prev[0]
+                        ady = p_last[1] - p_prev[1]
+                        amag_dir = math.hypot(adx, ady)
+                        if amag_dir > 1e-6:
+                            anx, any_ = adx / amag_dir, ady / amag_dir
+                            asym_start = world_to_screen(p_last[0], p_last[1], ppm, camera_center_tuple)
+                            asym_end = (
+                                int(asym_start[0] + anx * ASYMPTOTE_LENGTH_PX),
+                                int(asym_start[1] - any_ * ASYMPTOTE_LENGTH_PX),
+                            )
+                            pygame.draw.line(orbit_layer, ASYMPTOTE_COLOR, asym_start, asym_end, 1)
+
                     screen.blit(orbit_layer, (0, 0))
 
             planet_radius_px = max(1, int(current_planet.radius * ppm))
@@ -2401,8 +2718,8 @@ def main():
             # Draw the planet
             draw_planet(screen, current_planet, planet_screen_pos, planet_radius_px)
             
-            # Draw night-side shadow for 3D effect (shadow on left side)
-            draw_planet_night_side(screen, planet_screen_pos, planet_radius_px, shadow_side="left")
+            # Draw night-side shadow for 3D depth (dynamic terminator)
+            draw_planet_night_side(screen, planet_screen_pos, planet_radius_px, sun_angle_deg=SUN_DIRECTION_DEG)
 
             # Shock ring on impact
             if impact_info is not None and shock_ring_start is not None:
@@ -2457,7 +2774,27 @@ def main():
                             int(round(sat_pos[1] - dir_y * arrow_length)),
                         )
                         head_length = int(max(4, min(VEL_ARROW_HEAD_LENGTH, arrow_length * 0.6)))
-                        draw_velocity_arrow(screen, sat_pos, arrow_end, head_length, VEL_ARROW_HEAD_ANGLE_DEG)
+                        draw_arrow(screen, sat_pos, arrow_end, VEL_ARROW_COLOR, head_length, VEL_ARROW_HEAD_ANGLE_DEG)
+
+            # Gravitational acceleration arrow
+            if show_velocity_arrow:
+                accel = get_acceleration(r, current_planet.mu)
+                amag = float(np.linalg.norm(accel))
+                if amag > 1e-10:
+                    grav_arrow_length = clamp(
+                        amag * GRAV_ARROW_SCALE,
+                        GRAV_ARROW_MIN_PIXELS,
+                        GRAV_ARROW_MAX_PIXELS,
+                    )
+                    if grav_arrow_length > 4.0:
+                        adir_x = float(accel[0]) / amag
+                        adir_y = float(accel[1]) / amag
+                        grav_arrow_end = (
+                            int(round(sat_pos[0] + adir_x * grav_arrow_length)),
+                            int(round(sat_pos[1] - adir_y * grav_arrow_length)),
+                        )
+                        grav_head = int(max(4, min(GRAV_ARROW_HEAD_LENGTH, grav_arrow_length * 0.6)))
+                        draw_arrow(screen, sat_pos, grav_arrow_end, GRAV_ARROW_COLOR, grav_head, GRAV_ARROW_HEAD_ANGLE_DEG)
 
             # Draw orbit markers
             hovered_marker: tuple[str, tuple[int, int], float] | None = None
@@ -2496,7 +2833,7 @@ def main():
             e = eccentricity(r, v, current_planet.mu)
             altitude_km = (rmag - current_planet.radius) / 1_000.0
             scenario = get_current_scenario()
-            
+
             # Determine colors for physics values based on warning conditions
             altitude_value_color = HUD_WARNING_COLOR if altitude_km < 0 else HUD_VALUE_COLOR
             # Warning color for very high eccentricity (near escape) or negative energy becoming positive
@@ -2559,11 +2896,13 @@ def main():
                     hud_surface.blit(value_surf, (padding_x + label_surf.get_width(), y_offset))
                     y_offset += line_height
             
-            screen.blit(hud_surface, (20, 20))
+            if not demo_mode:
+                screen.blit(hud_surface, (20, 20))
 
-            # Sim buttons
-            for btn in sim_buttons:
-                btn.draw(screen, font, mouse_pos)
+            # Sim buttons (hidden in demo mode)
+            if not demo_mode:
+                for btn in sim_buttons:
+                    btn.draw(screen, font, mouse_pos)
 
             # Impact overlay
             overlay_alpha_factor = 0.0
@@ -2614,12 +2953,20 @@ def main():
                 flash_rect = flash_surf.get_rect(center=(WIDTH // 2, 40))
                 screen.blit(flash_surf, flash_rect)
 
-            # FPS
-            fps_value = clock.get_fps()
-            fps_text = font_fps.render(f"FPS: {fps_value:.1f}", True, HUD_TEXT_COLOR)
-            fps_text.set_alpha(FPS_TEXT_ALPHA)
-            fps_rect = fps_text.get_rect(bottomright=(WIDTH - 16, HEIGHT - 16))
-            screen.blit(fps_text, fps_rect)
+            # FPS (hide in demo mode)
+            if not demo_mode:
+                fps_value = clock.get_fps()
+                fps_text = font_fps.render(f"FPS: {fps_value:.1f}", True, HUD_TEXT_COLOR)
+                fps_text.set_alpha(FPS_TEXT_ALPHA)
+                fps_rect = fps_text.get_rect(bottomright=(WIDTH - 16, HEIGHT - 16))
+                screen.blit(fps_text, fps_rect)
+
+            # Demo overlay
+            if demo_mode:
+                demo_draw_overlay(screen)
+                if demo_record:
+                    pygame.image.save(screen, f"demo/frames/frame_{demo_frame_counter:06d}.png")
+                    demo_frame_counter += 1
 
             pygame.display.flip()
             clock.tick()

@@ -1,4 +1,4 @@
-"""Analyze a recorded simulation run and generate diagnostic figures."""
+"""Analysera en inspelad simulering och generera diagnostiska figurer."""
 from __future__ import annotations
 
 import argparse
@@ -20,7 +20,7 @@ TIMESERIES_FILENAME = "timeseries.csv"
 EVENTS_FILENAME = "events.csv"
 META_FILENAME = "meta.json"
 FIGS_SUBDIR = "figs"
-ENERGY_TOL = 1e-4  # joule per kilogram tolerance for orbit classification
+ENERGY_TOL = 1e-4  # tolerans i J/kg för banklassificering
 
 
 def load_timeseries(path: Path) -> Dict[str, np.ndarray]:
@@ -149,7 +149,7 @@ def plot_radius(fig_dir: Path, ts: Dict[str, np.ndarray], events: List[dict]) ->
             ax.axvline(event["t"], color="#1864ab", linestyle=":", alpha=0.5, label="Apocenter")
     handles, labels = ax.get_legend_handles_labels()
     if handles:
-        # deduplicate labels
+        # ta bort dubbletter
         seen = {}
         unique_handles = []
         unique_labels = []

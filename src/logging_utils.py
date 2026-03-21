@@ -1,4 +1,4 @@
-"""Utilities for buffering simulation logs to disk."""
+"""Verktyg för buffrad loggning av simuleringsdata till disk."""
 from __future__ import annotations
 
 import json
@@ -8,21 +8,21 @@ from typing import Optional, Sequence
 
 
 class RunLogger:
-    """Buffered logger that stores simulation data to CSV files.
+    """Buffrad logger som sparar simuleringsdata till CSV-filer.
 
-    Parameters
+    Parametrar
     ----------
     root_dir:
-        Root directory where run folders should be created.
+        Rotkatalog där körningsmappar skapas.
     run_id:
-        Optional custom run identifier. If omitted a timestamp based
-        identifier in the form ``YYYYmmdd_HHMMSS_run`` is used.
+        Valfritt körnings-ID. Om det utelämnas genereras ett
+        tidsstämpelbaserat ID i formen ``YYYYmmdd_HHMMSS_run``.
     timeseries_flush_threshold:
-        Number of buffered time series rows before an automatic flush
-        to disk is triggered.
+        Antal buffrade tidsserierader innan automatisk skrivning
+        till disk utlöses.
     events_flush_threshold:
-        Number of buffered event rows before an automatic flush to disk
-        is triggered.
+        Antal buffrade händelserader innan automatisk skrivning
+        till disk utlöses.
     """
 
     TIMESERIES_HEADER = [
@@ -85,20 +85,20 @@ class RunLogger:
         self._ts_threshold = max(1, timeseries_flush_threshold)
         self._ev_threshold = max(1, events_flush_threshold)
 
-        # Store last run marker for convenience tools.
+        # Spara senaste körningens ID för snabbåtkomst.
         last_run_marker = self.root_dir / "last_run.txt"
         last_run_marker.write_text(self.run_id, encoding="utf-8")
 
     # ------------------------------------------------------------------
     def write_meta(self, meta: dict) -> None:
-        """Write metadata for the run to ``meta.json``."""
+        """Skriv metadata för körningen till ``meta.json``."""
 
         with self.meta_path.open("w", encoding="utf-8") as fh:
             json.dump(meta, fh, indent=2, sort_keys=True)
 
     # ------------------------------------------------------------------
     def log_ts(self, values: Sequence[float]) -> None:
-        """Buffer one row of time series values."""
+        """Buffra en rad med tidsserie-värden."""
 
         self._ts_buffer.append(",".join(self._format_value(v) for v in values))
         if len(self._ts_buffer) >= self._ts_threshold:
@@ -106,7 +106,7 @@ class RunLogger:
 
     # ------------------------------------------------------------------
     def log_event(self, values: Sequence[object]) -> None:
-        """Buffer one row of event information."""
+        """Buffra en rad med händelseinformation."""
 
         self._ev_buffer.append(",".join(self._format_event_value(v) for v in values))
         if len(self._ev_buffer) >= self._ev_threshold:
@@ -114,7 +114,7 @@ class RunLogger:
 
     # ------------------------------------------------------------------
     def close(self) -> None:
-        """Flush pending buffers and close file handles."""
+        """Töm buffrar och stäng filhanterare."""
 
         self._flush_timeseries()
         self._flush_events()

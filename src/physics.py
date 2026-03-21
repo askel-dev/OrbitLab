@@ -1,46 +1,46 @@
 import numpy as np
 import math
 
-# --- Constants (Teori) ---
+# --- Konstanter ---
 G = 6.674e-11
 
-# Default Earth values (for backwards compatibility and reference)
-M_EARTH = 5.972e24          # Earth Mass
-MU_EARTH = G * M_EARTH      # Earth's Standard Gravitational Parameter
+# Jordens värden
+M_EARTH = 5.972e24          # Jordens massa
+MU_EARTH = G * M_EARTH      # Jordens standardgravitationsparameter
 EARTH_RADIUS = 6_371_000
 
 
 def get_acceleration(r_position: np.ndarray, mu: float) -> np.ndarray:
     """
-    Calculates gravitational acceleration based on Newton's Law.
-    
+    Beräknar gravitationsacceleration enligt Newtons gravitationslag.
+
     Args:
-        r_position: Position vector from central body
-        mu: Gravitational parameter (G * M) of the central body
-    
+        r_position: Positionsvektor från centralkroppen
+        mu: Gravitationsparameter (G * M) för centralkroppen
+
     Returns:
-        Acceleration vector
+        Accelerationsvektor
     """
     dist = np.linalg.norm(r_position)
     if dist == 0:
         return np.zeros_like(r_position)
     # F = G*M*m / r^2  ->  a = G*M / r^2
-    # Vector form: a = -mu * r / |r|^3
+    # Vektorform: a = -mu * r / |r|^3
     return -mu * r_position / (dist**3)
 
 
 def euler_step(r: np.ndarray, v: np.ndarray, dt: float, mu: float = MU_EARTH) -> tuple[np.ndarray, np.ndarray]:
     """
-    Basic Euler Integration.
-    
+    Eulers integrationsmetod (första ordningen).
+
     Args:
-        r: Position vector
-        v: Velocity vector
-        dt: Time step
-        mu: Gravitational parameter (G * M) of the central body. Defaults to Earth.
-    
+        r: Positionsvektor
+        v: Hastighetsvektor
+        dt: Tidssteg
+        mu: Gravitationsparameter (G * M) för centralkroppen. Standard: Jorden.
+
     Returns:
-        Tuple of (new_position, new_velocity)
+        Tupel av (ny_position, ny_hastighet)
     """
     a = get_acceleration(r, mu)
     r_new = r + v * dt
@@ -50,16 +50,16 @@ def euler_step(r: np.ndarray, v: np.ndarray, dt: float, mu: float = MU_EARTH) ->
 
 def rk4_step(r: np.ndarray, v: np.ndarray, dt: float, mu: float = MU_EARTH) -> tuple[np.ndarray, np.ndarray]:
     """
-    Runge-Kutta 4 Integration.
-    
+    Runge-Kutta 4 integrationsmetod (fjärde ordningen).
+
     Args:
-        r: Position vector
-        v: Velocity vector
-        dt: Time step
-        mu: Gravitational parameter (G * M) of the central body. Defaults to Earth.
-    
+        r: Positionsvektor
+        v: Hastighetsvektor
+        dt: Tidssteg
+        mu: Gravitationsparameter (G * M) för centralkroppen. Standard: Jorden.
+
     Returns:
-        Tuple of (new_position, new_velocity)
+        Tupel av (ny_position, ny_hastighet)
     """
     # k1
     a1 = get_acceleration(r, mu)
@@ -80,7 +80,7 @@ def rk4_step(r: np.ndarray, v: np.ndarray, dt: float, mu: float = MU_EARTH) -> t
     v4 = v + a3 * dt
     a4 = get_acceleration(r4, mu)
 
-    # Final weighted average
+    # Vägt medelvärde
     r_new = r + (dt / 6.0) * (v1 + 2*v2 + 2*v3 + v4)
     v_new = v + (dt / 6.0) * (a1 + 2*a2 + 2*a3 + a4)
 
