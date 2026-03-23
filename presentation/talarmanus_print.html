@@ -256,13 +256,13 @@
 
 <p contenteditable="false">Föreställ er att ni rullar en boll uppför en kulle.</p>
 
-<p contenteditable="false"><span class="klicka">KLICKA</span> Ger ni bollen en svag knuff rullar den en bit uppåt, stannar till, och rullar tillbaka ner. I rymden motsvarar detta att man inte når omloppsbana, eller att man är fast i jordens dragningskraft och faller tillbaka.</p>
+<p><span class="klicka">KLICKA</span> Ger ni bollen en svag knuff så rullar den en bit uppåt, saktar ner och kommer tillbaka. I rymdtermer är det här en elliptisk omloppsbana — satelliten går runt och kommer tillbaka till samma punkt.</p>
 
-<p contenteditable="false"><span class="klicka">KLICKA</span> Ger ni precis rätt knuff så har bollen exakt den energi som krävs för att övervinna backen och kommer saktar ner hela vägen och stannar precis när backen tar slut. Det här är flykthastigheten – den exakta gränsen för att bryta sig loss.</p>
+<p><span class="klicka">KLICKA</span> Ger ni precis rätt knuff så når bollen precis toppen av kullen och stannar där. Det här är flyktgränsen — den exakta gränshastigheten.</p>
 
-<p contenteditable="false"><span class="klicka">KLICKA</span> Och ger ni en hård knuff flyger bollen över krönet och fortsätter bortåt med fart kvar. Det är en flyktbana – rymdsonden lämnar jorden för alltid.</p>
+<p><span class="klicka">KLICKA</span> Och ger ni en hård knuff så flyger bollen över toppen och fortsätter ner på andra sidan. Det är en flyktbana — satelliten lämnar jorden och kommer aldrig tillbaka.</p>
 
-<p contenteditable="false"><br></p>
+<p><span class="klicka">KLICKA</span> Gravitationen är kullen. Hastigheten är knuffen. Och det är energin som avgör vilket utfall man får. Den här analogin är faktiskt inte bara en metafor — det är matematiskt samma ekvation. Och den ekvationen ska vi titta på nu.</p>
 
 <hr>
 
@@ -307,7 +307,17 @@
 
 <p contenteditable="false"><span class="klicka">KLICKA</span> Resultatet är dramatiskt noggrannare för samma stegstorlek.</p>
 
-<p contenteditable="false"><span class="klicka">KLICKA</span> För den som är intresserad: RK4 använder fyra lutningsuppskattningar — k1 till k4 — som viktas 1:2:2:1. Det matchar en Taylorutveckling till fjärde ordningen. Men det viktiga att ta med sig? RK4 tittar framåt flera gånger, Euler bara en gång. Den enkla skillnaden gör RK4 miljarder gånger noggrannare.</p>
+<p><span class="klicka">KLICKA</span> För den som är intresserad: RK4 använder fyra lutningsuppskattningar — k1 till k4 — som viktas 1:2:2:1. Det matchar en Taylorutveckling till fjärde ordningen. Men det viktiga att ta med sig? RK4 tittar framåt flera gånger, Euler bara en gång. Den enkla skillnaden gör RK4 miljarder gånger noggrannare.</p>
+
+<hr>
+
+<!-- SLIDE 9 -->
+<h2>Slide 9 – Programmet OrbitLab</h2>
+<p class="tid">~45 sekunder</p>
+
+<p>Så då har vi teorin på plats. Låt mig berätta om programmet jag byggde för att testa allt det här. OrbitLab är byggt i Python med Pygame för realtidsvisualisering. Det stödjer 10 olika himmelskroppar — Jorden, Mars, Jupiter med flera — med 7 eller fler fördefinierade scenarier per planet. Man kan växla mellan RK4 och Euler i realtid för att se skillnaden direkt, och programmet loggar automatiskt all data för analys efteråt.</p>
+
+<p><span class="klicka">KLICKA</span> Låt mig visa er hur det ser ut.</p>
 
 <hr>
 
