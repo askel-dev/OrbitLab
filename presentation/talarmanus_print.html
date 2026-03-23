@@ -167,16 +167,13 @@
 <table class="tidsbudget">
   <tbody><tr><th>Slide</th><th>Innehåll</th><th>Tid</th></tr>
   <tr><td>1</td><td>Titel</td><td>0:30</td></tr>
-  <tr><td>1b</td><td>Newton vs Kod</td><td>0:45</td></tr>
   <tr><td>2</td><td>Vardagskrok</td><td>1:00</td></tr>
   <tr><td>2b</td><td>Bakgrund &amp; inspiration</td><td>1:00</td></tr>
   <tr><td>3</td><td>Kärnfrågan</td><td>1:00</td></tr>
   <tr><td>4</td><td>Boll-på-kulle-analogi</td><td>1:15</td></tr>
   <tr><td>5</td><td>Gravitation</td><td>1:00</td></tr>
-  <tr><td>6</td><td>Energi avgör allt</td><td>1:15</td></tr>
   <tr><td>7</td><td>Varför numeriska metoder</td><td>1:00</td></tr>
   <tr><td>8</td><td>Euler vs RK4</td><td>1:30</td></tr>
-  <tr><td>9</td><td>OrbitLab-programmet</td><td>0:45</td></tr>
   <tr><td>9b</td><td>Utvecklingsprocessen</td><td>0:45</td></tr>
   <tr><td>10</td><td>Demo</td><td>1:30</td></tr>
   <tr><td>11</td><td>Resultat: Elliptisk bana</td><td>1:15</td></tr>
@@ -189,17 +186,6 @@
   <tr><td>18</td><td>Frågor</td><td>öppen</td></tr>
   <tr class="total"><td></td><td>Totalt</td><td>~20 min</td></tr>
 </tbody></table>
-
-<hr>
-<!-- SLIDE 1b -->
-<h2>Slide 1b – Newton vs Kod</h2>
-<p class="tid">~45 sekunder</p>
-
-<p>På den här bilden ser ni Isaac Newton — mannen som för över 300 år sedan formulerade gravitationslagen med penna och papper.</p>
-
-<p><span class="klicka">KLICKA</span> Men idag löser vi det med kod. Vi har verktyg som Newton aldrig kunde drömma om.</p>
-
-<p><span class="klicka">KLICKA</span> I mitt arbete har jag simulerat hur satelliter rör sig i omloppsbana — och testat vad som händer när vi låter datorn räkna det Newton aldrig hann med. Tusentals uppskjutningar, på några sekunder. Det är kraften i numerisk simulering.</p>
 
 <hr>
 <!-- SLIDE 1 -->
@@ -278,20 +264,6 @@
 
 <hr>
 
-<!-- SLIDE 6 -->
-<h2>Slide 6 – Energin avgör allt</h2>
-<p class="tid">~1 minut 15 sekunder</p>
-
-<p>Minns bollen på kullen? Vi kan uttrycka det mer exakt med en energiformel.</p>
-
-<p><span class="klicka">KLICKA</span> Epsilon — den specifika energin — är lika med v i kvadrat delat på två, minus my delat på r. Det första är rörelseenergin: hur snabbt man rör sig. Det andra är den potentiella energin: hur långt från planeten man är. Och my är G gånger planetens massa.</p>
-
-<p><span class="klicka">KLICKA</span> Det fina är att tecknet på epsilon avgör utfallet helt och hållet. Om epsilon är negativt har man inte tillräckligt med energi för att fly — då får man en elliptisk omloppsbana. Om epsilon är exakt noll är man precis vid flyktgränsen. Och om epsilon är positivt så flyger man iväg för alltid.</p>
-
-<p><span class="klicka">KLICKA</span> Och i konkreta siffror, vid 600 kilometers höjd: en cirkulär bana kräver 7&nbsp;561 meter per sekund. Flykt kräver 10&nbsp;693. Bara 3&nbsp;000 meter per sekund skiljer en stabil bana från att försvinna ut i rymden för alltid.</p>
-
-<hr>
-
 <!-- SLIDE 7 -->
 <h2>Slide 7 – Ett problem datorer måste lösa</h2>
 <p class="tid">~1 minut</p>
@@ -321,16 +293,6 @@
 <p><span class="klicka">KLICKA</span> Resultatet är dramatiskt noggrannare för samma stegstorlek.</p>
 
 <p><span class="klicka">KLICKA</span> För den som är intresserad: RK4 använder fyra lutningsuppskattningar — k1 till k4 — som viktas 1:2:2:1. Det matchar en Taylorutveckling till fjärde ordningen. Men det viktiga att ta med sig? RK4 tittar framåt flera gånger, Euler bara en gång. Den enkla skillnaden gör RK4 miljarder gånger noggrannare.</p>
-
-<hr>
-
-<!-- SLIDE 9 -->
-<h2>Slide 9 – Programmet OrbitLab</h2>
-<p class="tid">~45 sekunder</p>
-
-<p>Så då har vi teorin på plats. Låt mig berätta om programmet jag byggde för att testa allt det här. OrbitLab är byggt i Python med Pygame för realtidsvisualisering. Det stödjer 10 olika himmelskroppar — Jorden, Mars, Jupiter med flera — med 7 eller fler fördefinierade scenarier per planet. Man kan växla mellan RK4 och Euler i realtid för att se skillnaden direkt, och programmet loggar automatiskt all data för analys efteråt.</p>
-
-<p><span class="klicka">KLICKA</span> Låt mig visa er hur det ser ut.</p>
 
 <hr>
 

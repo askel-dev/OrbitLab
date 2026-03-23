@@ -89,7 +89,7 @@
     text-align: center;
   }
   .reveal .dev-timeline img {
-    max-height: 22vh;
+    max-height: 25vh;
     max-width: 100%;
     border-radius: 6px;
     box-shadow: 0 2px 12px rgba(0,0,0,0.4);
@@ -140,12 +140,12 @@
 <!-- SLIDE 2b: Bakgrund & inspiration -->
 <section>
   <h2>Bakgrund &amp; inspiration</h2>
-  <p style="font-size:1.1em;">Mitt intresse: rymden &ndash; fr&aring;n stj&auml;rnkikare till satellitbanor</p>
+  <p style="font-size:1.1em;">Intresse</p>
   <div class="fragment">
     <p><span class="highlight">Kepler</span> (1609&ndash;1619): planeter r&ouml;r sig i ellipser &ndash; men <em>varf&ouml;r</em>?</p>
   </div>
   <div class="fragment">
-    <p><span class="highlight">Newton</span> (1687): gravitationslagen &ndash; en formel f&ouml;r allt</p>
+    <p><span class="highlight">Newton</span> (1687): gravitationslagen</p>
   </div>
   <div class="fragment">
     <p>400 &aring;r senare &rarr; kan jag testa detta med en dator?</p>
@@ -180,7 +180,6 @@
     <li class="fragment"><span class="warn">Exakt r&auml;tt knuff</span> &rarr; stannar vid toppen <span class="small">(flyktgr&auml;ns)</span></li>
     <li class="fragment"><span style="color:#ff6666;">H&aring;rd knuff</span> &rarr; flyger &ouml;ver <span class="small">(flyktbana)</span></li>
   </ul>
-  <p class="fragment" style="margin-top:1em;">Gravitationen &auml;r kullen. Hastigheten &auml;r knuffen.<br>
   <span class="highlight">Energin</span> avg&ouml;r vilket utfall du f&aring;r.</p>
   <aside class="notes">Den h&auml;r analogin &auml;r inte bara en metafor. Det &auml;r matematiskt samma ekvation. Bollens kinetiska energi minus kullens potentiella energi best&auml;mmer utfallet. Vi kommer se formeln strax, men intuitionen &auml;r: energin avg&ouml;r allt.</aside>
 </section>
@@ -202,26 +201,6 @@
     <p class="small">Newtons gravitationslag &ndash; den enda ekvationen i simuleringen</p>
   </div>
   <aside class="notes">Det h&auml;r &auml;r den enda ekvationen som styr hela simuleringen. Allt annat f&ouml;ljer fr&aring;n denna enda lag. Det omv&auml;nda kvadratf&ouml;rh&aring;llandet inneb&auml;r att gravitationen avtar snabbt med avst&aring;ndet, men aldrig riktigt n&aring;r noll.</aside>
-</section>
-
-<!-- SLIDE 6: Energy Decides the Orbit Type -->
-<section>
-  <h2>Energin avg&ouml;r allt</h2>
-  <p>Minns bollen p&aring; kullen? Vi kan ber&auml;kna den <span class="highlight">totala energin</span>:</p>
-  <div class="fragment">
-    <div class="formula">&epsilon; = v&sup2;/2 &minus; &mu;/r</div>
-    <p class="small">&epsilon; = specifik energi &nbsp;|&nbsp; v = hastighet &nbsp;|&nbsp; &mu; = G&middot;M &nbsp;|&nbsp; r = avst&aring;nd fr&aring;n centrum</p>
-  </div>
-  <div class="fragment">
-    <p style="margin-top:0.5em;">Tecknet p&aring; &epsilon; avg&ouml;r utfallet:</p>
-    <ul>
-      <li><span class="highlight">&epsilon; &lt; 0</span> &rarr; <strong>Elliptisk bana</strong></li>
-      <li><span class="warn">&epsilon; = 0</span> &rarr; <strong>Flyktgr&auml;ns</strong></li>
-      <li><span style="color:#ff6666;">&epsilon; &gt; 0</span> &rarr; <strong>Flyktbana</strong></li>
-    </ul>
-  </div>
-  <p class="fragment small" style="margin-top:0.5em;">Vid 600 km h&ouml;jd: cirkul&auml;r bana kr&auml;ver 7 561 m/s, flykt kr&auml;ver 10 693 m/s</p>
-  <aside class="notes">Det h&auml;r kopplar tillbaka till bollanalysen. Negativ energi inneb&auml;r att bollen inte har tillr&auml;ckligt med energi f&ouml;r att l&auml;mna dalen. Noll inneb&auml;r att den precis n&aring;r toppen. Positiv inneb&auml;r att den flyger &ouml;ver.</aside>
 </section>
 
 <!-- SLIDE 7: Why Numerical Methods -->
@@ -255,26 +234,13 @@
       <p class="fragment highlight" style="margin-top:0.5em;">Dramatiskt noggrannare f&ouml;r samma stegstorlek</p>
     </div>
   </div>
-  <p class="fragment small" style="margin-top:0.8em;">RK4: fyra lutningsuppskattningar (k1&ndash;k4), viktade 1:2:2:1 &rarr; Taylorutveckling till 4:e ordningen</p>
+
   <aside class="notes">Det viktigaste &auml;r att RK4 tittar fram&aring;t flera g&aring;nger innan den best&auml;mmer var den ska ta n&auml;sta steg, medan Euler bara tittar en g&aring;ng. Den enkla skillnaden g&ouml;r RK4 miljarder g&aring;nger noggrannare, som vi kommer se i resultaten.</aside>
 </section>
 
 <!-- ============================================================ -->
 <!-- ACT 3: THE TOOL                                              -->
 <!-- ============================================================ -->
-
-<!-- SLIDE 9: OrbitLab -->
-<section>
-  <h2>Programmet OrbitLab</h2>
-  <p>Python + Pygame &ndash; realtidsvisualisering</p>
-  <ul>
-    <li><span class="highlight">10 himmelskroppar</span> med <span class="highlight">7+ scenarier</span> per planet</li>
-    <li>V&auml;xla mellan <span class="highlight">RK4</span> och <span class="warn">Euler</span> i realtid</li>
-    <li>Automatisk <span class="highlight">dataloggning</span> &amp; analys</li>
-  </ul>
-  <p class="fragment small" style="margin-top:1em;">L&aring;t mig visa er...</p>
-  <aside class="notes">Det h&auml;r &auml;r programmet jag byggde fr&aring;n grunden. L&aring;t mig byta till en live-demo s&aring; ni kan se det i aktion.</aside>
-</section>
 
 <!-- SLIDE 9b: Development Timeline -->
 <section>
@@ -511,7 +477,7 @@ window.addEventListener('mousedown', function(event) {
     else if (event.button === 2) {
         Reveal.prev();
     }
-});
+});z
 </script>
 </body>
 </html>
