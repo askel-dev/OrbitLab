@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="sv"><head>
+<meta charset="utf-8">
+<title>Talarmanus – Hur påverkas omloppsbanor av startvillkor?</title>
+<style>
+  /* ── Editor toolbar ── */
+  #toolbar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    background: #222;
+    color: #fff;
+    padding: 8px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: Arial, sans-serif;
+    font-size: 13px;
+    z-index: 9999;
+  }
+  #toolbar button {
+    background: #444;
+    color: #fff;
+    border: 1px solid #666;
+    border-radius: 4px;
+    padding: 5px 14px;
+    cursor: pointer;
+    font-size: 13px;
+  }
+  #toolbar button:hover { background: #555; }
+  #toolbar button.active { background: #0a84ff; border-color: #0a84ff; }
+  #toolbar .sep { color: #666; }
+  #toolbar .hint { color: #aaa; font-size: 11px; margin-left: auto; }
+  #save-status { color: #5f5; font-size: 12px; }
+  body.editing-on { margin-top: 44px !important; }
+  body.editing-on [contenteditable] {
+    outline: 1px dashed #aaa;
+    border-radius: 2px;
+  }
+  body.editing-on [contenteditable]:focus {
+    outline: 2px solid #0a84ff;
+    background: #fffef5;
+  }
+</style>
+<style>
+  @page {
+    margin: 2cm 2.5cm;
+    size: A4;
+  }
+  body {
+    font-family: "Georgia", "Times New Roman", serif;
+    font-size: 12pt;
+    line-height: 1.6;
+    color: #1a1a1a;
+    max-width: 700px;
+    margin: 0 auto;
+    padding: 2cm;
+  }
+  h1 {
+    font-size: 18pt;
+    text-align: center;
+    border-bottom: 2px solid #333;
+    padding-bottom: 0.3em;
+    margin-bottom: 0.2em;
+  }
+  .meta {
+    text-align: center;
+    color: #555;
+    font-size: 10pt;
+    margin-bottom: 2em;
+  }
+  h2 {
+    font-size: 14pt;
+    margin-top: 1.8em;
+    margin-bottom: 0.3em;
+    padding: 0.3em 0.5em;
+    background: #f0f0f0;
+    border-left: 4px solid #333;
+    page-break-after: avoid;
+  }
+  .tid {
+    font-size: 10pt;
+    color: #666;
+    font-style: italic;
+    margin-bottom: 0.8em;
+  }
+  p {
+    margin: 0.5em 0;
+    text-align: left;
+  }
+  .klicka {
+    display: inline-block;
+    background: #333;
+    color: #fff;
+    font-size: 8pt;
+    font-weight: bold;
+    padding: 1px 6px;
+    border-radius: 3px;
+    margin-right: 4px;
+    vertical-align: middle;
+    font-family: "Arial", sans-serif;
+  }
+  .regi {
+    font-style: italic;
+    color: #555;
+    font-size: 10.5pt;
+    margin: 0.4em 0;
+  }
+  hr {
+    border: none;
+    border-top: 1px solid #ccc;
+    margin: 1.5em 0;
+  }
+  .tidsbudget {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 10pt;
+    margin: 1em 0 2em 0;
+  }
+  .tidsbudget th {
+    background: #333;
+    color: #fff;
+    padding: 4px 8px;
+    text-align: left;
+  }
+  .tidsbudget td {
+    padding: 3px 8px;
+    border-bottom: 1px solid #ddd;
+  }
+  .tidsbudget tr:nth-child(even) { background: #f8f8f8; }
+  .tidsbudget .total td { font-weight: bold; border-top: 2px solid #333; }
+  .faq { margin-top: 2em; }
+  .faq h3 {
+    font-size: 11pt;
+    margin: 1em 0 0.2em 0;
+  }
+  .faq p {
+    font-size: 11pt;
+    margin: 0.2em 0 0.8em 0;
+    color: #333;
+  }
+  .tips-box {
+    background: #f8f8f0;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 0.8em 1em;
+    margin-top: 1.5em;
+    font-size: 10.5pt;
+  }
+  .tips-box strong { display: block; margin-bottom: 0.3em; }
+  .tips-box ul { margin: 0; padding-left: 1.5em; }
+  .tips-box li { margin-bottom: 0.3em; }
+  @media print {
+    body { padding: 0; }
+    h2 { break-after: avoid; }
+    .no-print { display: none; }
+  }
+</style>
+</head>
+<body class="editing-on">
+
+<h1>Talarmanus</h1>
+<p class="meta">
+  "Hur påverkas omloppsbanor av startvillkor?"<br>
+  Axel Jönsson · ~19 minuter + frågor
+</p>
+
+<table class="tidsbudget">
+  <tbody><tr><th>Slide</th><th>Innehåll</th><th>Tid</th></tr>
+  <tr><td>1</td><td>Titel</td><td>0:30</td></tr>
+  <tr><td>2</td><td>Vardagskrok</td><td>1:00</td></tr>
+  <tr><td>2b</td><td>Bakgrund &amp; inspiration</td><td>1:00</td></tr>
+  <tr><td>3</td><td>Kärnfrågan</td><td>1:00</td></tr>
+  <tr><td>4</td><td>Boll-på-kulle-analogi</td><td>1:15</td></tr>
+  <tr><td>5</td><td>Gravitation</td><td>1:00</td></tr>
+  <tr><td>6</td><td>Energi avgör allt</td><td>1:15</td></tr>
+  <tr><td>7</td><td>Varför numeriska metoder</td><td>1:00</td></tr>
+  <tr><td>8</td><td>Euler vs RK4</td><td>1:30</td></tr>
+  <tr><td>9</td><td>OrbitLab-programmet</td><td>0:45</td></tr>
+  <tr><td>9b</td><td>Utvecklingsprocessen</td><td>0:45</td></tr>
+  <tr><td>10</td><td>Demo</td><td>1:30</td></tr>
+  <tr><td>11</td><td>Resultat: Elliptisk bana</td><td>1:15</td></tr>
+  <tr><td>12</td><td>Resultat: Flyktbana</td><td>1:00</td></tr>
+  <tr><td>13</td><td>Resultat: Energibevarande</td><td>1:15</td></tr>
+  <tr><td>14</td><td>Resultat: Parametersvep</td><td>1:15</td></tr>
+  <tr><td>15</td><td>Diskussion</td><td>1:00</td></tr>
+  <tr><td>16</td><td>Utmaningar</td><td>1:00</td></tr>
+  <tr><td>17</td><td>Tips</td><td>1:00</td></tr>
+  <tr><td>18</td><td>Frågor</td><td>öppen</td></tr>
+  <tr class="total"><td></td><td>Totalt</td><td>~19 min</td></tr>
+</tbody></table>
+
+<hr>
+
+<!-- SLIDE 1 -->
+<h2>Slide 1 – Titel</h2>
+<p class="tid">~30 sekunder</p>
+
+<p>Hej allihopa! Jag heter Axel Jönsson och det här är mitt gymnasiearbete.</p>
+
+<p>Frågan jag ställde mig var ganska enkel: vad händer med en satellit beroende på hur snabbt och i vilken riktning man skjuter upp den? Stannar den i bana, eller flyger den iväg? För att ta reda på det byggde jag en egen simulator - och den ska ni få se idag. Min handledare har varit Fredrik Persson.</p>
+
+<hr>
+
+<!-- SLIDE 2 -->
+<h2>Slide 2 – Du använde omloppsbanemekanik idag</h2>
+<p class="tid">~1 minut</p>
+
+<p>Innan vi dyker ner i fysiken vill jag börja med någonting ni alla har gjort idag, eller åtminstone den senaste veckan. Varje gång ni öppnar Google Maps, streamar en video eller kollar vädret på telefonen så använder ni teknik som är helt beroende av omloppsbanemekanik.</p>
+
+<p><span class="klicka">KLICKA</span> Just nu kretsar 31 GPS-satelliter runt jorden med exakt rätt hastighet. Inte ungefär rätt — exakt rätt. Det är därför er position på kartan stämmer.</p>
+
+<p><span class="klicka">KLICKA</span> Om de går för långsamt kraschar de tillbaka mot jorden. För snabbt och de flyger iväg ut i rymden. Så hur tar man reda på vilken hastighet som är den rätta? Det är precis den frågan som fick mig att välja det här ämnet — jag ville förstå fysiken bakom det och se om jag kunde simulera det själv.</p>
+
+<hr>
+
+<!-- SLIDE 2b -->
+<h2>Slide 2b – Bakgrund &amp; inspiration</h2>
+<p class="tid">~1 minut</p>
+
+<p>Rymden har alltid fascinerat mig. Redan som liten tittade jag på stjärnorna och undrade hur satelliter och planeter kan hålla sig kvar i sina banor utan att falla ner. Det var den nyfikenheten som fick mig att välja det här ämnet.</p>
+
+<p><span class="klicka">KLICKA</span> Och de här frågorna är inte nya. Redan på 1600-talet upptäckte Johannes Kepler att planeter rör sig i ellipser runt solen. Han beskrev det empiriskt — han visste hur det såg ut, men inte varför det fungerade så.</p>
+
+<p><span class="klicka">KLICKA</span> Det var Isaac Newton som 1687 gav svaret med sin gravitationslag. En enda formel som förklarar både varför äpplen faller och varför planeter kretsar. Det är exakt den lagen som driver hela min simulator.</p>
+
+<p><span class="klicka">KLICKA</span> Så 400 år efter Kepler och Newton ville jag testa de här idéerna själv — med en dator. Och det är det som blev mitt gymnasiearbete.</p>
+
+<hr>
+
+<!-- SLIDE 3 -->
+<h2>Slide 3 – Kärnfrågan</h2>
+<p class="tid">~1 minut</p>
+
+<p>Det här är den centrala frågan i hela arbetet. Vad avgör om en satellit stannar i omloppsbana, flyr ut i rymden, eller kraschar tillbaka ner?</p>
+
+<p><span class="klicka">KLICKA</span> För att besvara den frågan byggde jag en fullständig simulator från grunden och testade 6&nbsp;000 olika uppskjutningar systematiskt, med olika hastigheter och riktningar.</p>
+
+<p><span class="klicka">KLICKA</span> Och spoiler: det visar sig att det handlar om bara två tal — hastigheten och riktningen. Men varför just de? Låt mig förklara det med en enkel bild.</p>
+
+<hr>
+
+<!-- SLIDE 4 -->
+<h2>Slide 4 – Tänk dig det som en boll på en kulle</h2>
+<p class="tid">~1 minut 15 sekunder</p>
+
+<p>Föreställ er att ni rullar en boll uppför en kulle.</p>
+
+<p><span class="klicka">KLICKA</span> Ger ni bollen en svag knuff så rullar den en bit uppåt, saktar ner och kommer tillbaka. I rymdtermer är det här en elliptisk omloppsbana — satelliten går runt och kommer tillbaka till samma punkt.</p>
+
+<p><span class="klicka">KLICKA</span> Ger ni precis rätt knuff så når bollen precis toppen av kullen och stannar där. Det här är flyktgränsen — den exakta gränshastigheten.</p>
+
+<p><span class="klicka">KLICKA</span> Och ger ni en hård knuff så flyger bollen över toppen och fortsätter ner på andra sidan. Det är en flyktbana — satelliten lämnar jorden och kommer aldrig tillbaka.</p>
+
+<p><span class="klicka">KLICKA</span> Gravitationen är kullen. Hastigheten är knuffen. Och det är energin som avgör vilket utfall man får. Den här analogin är faktiskt inte bara en metafor — det är matematiskt samma ekvation. Och den ekvationen ska vi titta på nu.</p>
+
+<hr>
+
+<!-- SLIDE 5 -->
+<h2>Slide 5 – Gravitation: Den enda kraften</h2>
+<p class="tid">~1 minut</p>
+
+<p>Så vad händer egentligen i rymden? Jo, i rymden finns inget luftmotstånd och ingen friktion. Det enda som påverkar en satellit är gravitationen som drar den mot planeten.</p>
+
+<p><span class="klicka">KLICKA</span> Och det viktiga att förstå är att ju närmare man är, desto starkare är dragningen. Dubbelt så nära innebär fyra gånger så stark kraft. Det kallas det omvända kvadratförhållandet.</p>
+
+<p><span class="klicka">KLICKA</span> Det uttrycks i Newtons gravitationslag: F är lika med G gånger M gånger m delat på r i kvadrat. Kraften mellan två massor, som avtar med kvadraten på avståndet. Det här är den enda ekvationen som styr hela min simulering — allt annat följer från den här enda lagen.</p>
+
+<hr>
+
+<!-- SLIDE 6 -->
+<h2>Slide 6 – Energin avgör allt</h2>
+<p class="tid">~1 minut 15 sekunder</p>
+
+<p>Minns bollen på kullen? Vi kan uttrycka det mer exakt med en energiformel.</p>
+
+<p><span class="klicka">KLICKA</span> Epsilon — den specifika energin — är lika med v i kvadrat delat på två, minus my delat på r. Det första är rörelseenergin: hur snabbt man rör sig. Det andra är den potentiella energin: hur långt från planeten man är. Och my är G gånger planetens massa.</p>
+
+<p><span class="klicka">KLICKA</span> Det fina är att tecknet på epsilon avgör utfallet helt och hållet. Om epsilon är negativt har man inte tillräckligt med energi för att fly — då får man en elliptisk omloppsbana. Om epsilon är exakt noll är man precis vid flyktgränsen. Och om epsilon är positivt så flyger man iväg för alltid.</p>
+
+<p><span class="klicka">KLICKA</span> Och i konkreta siffror, vid 600 kilometers höjd: en cirkulär bana kräver 7&nbsp;561 meter per sekund. Flykt kräver 10&nbsp;693. Bara 3&nbsp;000 meter per sekund skiljer en stabil bana från att försvinna ut i rymden för alltid.</p>
+
+<hr>
+
+<!-- SLIDE 7 -->
+<h2>Slide 7 – Ett problem datorer måste lösa</h2>
+<p class="tid">~1 minut</p>
+
+<p>Så vi känner formeln för gravitationen. Varför kan vi inte bara lösa det med papper och penna?</p>
+
+<p><span class="klicka">KLICKA</span> För en perfekt cirkulär bana kan vi faktiskt det. Men för alla realistiska banor är det inte så enkelt. Kraften ändrar både riktning och styrka i varje punkt längs banan. Positionen beror på hastigheten, som beror på accelerationen, som i sin tur beror på positionen. Det är ett hönan-och-ägget-problem.</p>
+
+<p><span class="klicka">KLICKA</span> Lösningen är att ta små steg framåt i tiden och beräkna om vid varje steg. Det kallas numerisk integration — datorn spårar banan steg för steg. Tänk på det som GPS-navigering: telefonen beräknar inte hela rutten på en gång, utan uppdaterar var ni är varje sekund. Numerisk integration fungerar på precis samma sätt.</p>
+
+<hr>
+
+<!-- SLIDE 8 -->
+<h2>Slide 8 – Två sätt att ta dessa steg</h2>
+<p class="tid">~1 minut 30 sekunder</p>
+
+<p>I mitt arbete jämför jag två numeriska metoder för att ta dessa steg framåt i tiden.</p>
+
+<p class="regi">[Peka på vänster kolumn]</p>
+<p>Först har vi Eulers metod. Den tittar en gång på var man är, beräknar riktningen, och tar ett steg framåt. Det är som att bara kolla vädret vid midnatt och anta att det förblir likadant hela dagen.</p>
+
+<p><span class="klicka">KLICKA</span> Problemet är att felen ackumuleras. Satelliten spiralerar sakta bort från sin rätta bana.</p>
+
+<p class="regi">[Peka på höger kolumn]</p>
+<p>Sedan har vi Runge-Kutta 4, eller RK4. Den tittar framåt fyra gånger innan den bestämmer var nästa steg ska landa. Det är som att kolla vädret vid midnatt, klockan sex på morgonen, mitt på dagen och klockan sex på kvällen, och sedan planera sin dag utifrån det.</p>
+
+<p><span class="klicka">KLICKA</span> Resultatet är dramatiskt noggrannare för samma stegstorlek.</p>
+
+<p><span class="klicka">KLICKA</span> För den som är intresserad: RK4 använder fyra lutningsuppskattningar — k1 till k4 — som viktas 1:2:2:1. Det matchar en Taylorutveckling till fjärde ordningen. Men det viktiga att ta med sig? RK4 tittar framåt flera gånger, Euler bara en gång. Den enkla skillnaden gör RK4 miljarder gånger noggrannare.</p>
+
+<hr>
+
+<!-- SLIDE 9 -->
+<h2>Slide 9 – Programmet OrbitLab</h2>
+<p class="tid">~45 sekunder</p>
+
+<p>Så då har vi teorin på plats. Låt mig berätta om programmet jag byggde för att testa allt det här. OrbitLab är byggt i Python med Pygame för realtidsvisualisering. Det stödjer 10 olika himmelskroppar — Jorden, Mars, Jupiter med flera — med 7 eller fler fördefinierade scenarier per planet. Man kan växla mellan RK4 och Euler i realtid för att se skillnaden direkt, och programmet loggar automatiskt all data för analys efteråt.</p>
+
+<p><span class="klicka">KLICKA</span> Låt mig visa er hur det ser ut.</p>
+
+<hr>
+
+<!-- SLIDE 9b -->
+<h2>Slide 9b – Utvecklingsprocessen</h2>
+<p class="tid">~45 sekunder</p>
+
+<p>Men först vill jag visa hur programmet utvecklades. Här ser ni processen steg för steg. Det började som en enkel ChatGPT-genererad matplotlib-plot — det var version 1. Sedan byggde jag om det till Pygame för realtidsvisualisering. Version 3 fick en huvudmeny och knappar. I version 4 lade jag till muskontroller och en jordsprite. Och till slut ser ni version 1.5 av OrbitLab som det ser ut idag, med procedurell planetgenerering och fullständig meny.</p>
+
+<hr>
+
+<!-- SLIDE 10 -->
+<h2>Slide 10 – Demo</h2>
+<p class="tid">~1 minut 30 sekunder</p>
+
+<p class="regi">[Här spelas en inspelad video av en cirkulär omloppsbana runt jorden.]</p>
+
+<p>Här ser ni OrbitLab i aktion. Det ni ser är en cirkulär omloppsbana runt jorden. Satelliten startar på 600 kilometers höjd med exakt 7&nbsp;561 meter per sekund — den cirkulära hastigheten.</p>
+
+<p class="regi">[Peka på banan]</p>
+<p>Titta på hur banan ritas ut bakom satelliten. Den sluter sig till en perfekt cirkel. Hastigheten är konstant hela vägen runt, precis som teorin förutsäger.</p>
+
+<p class="regi">[Peka på planeten]</p>
+<p>Jordens yta renderas procedurellt — varje planet i programmet ser annorlunda ut. Man kan zooma in och ut, följa satelliten med kameran, och byta scenario med ett knapptryck.</p>
+
+<p class="regi">[Om live-demo:] Under frågesessionen kan jag köra det här live och visa andra scenarion — till exempel flyktbanor eller jämföra Euler och RK4 i realtid.</p>
+
+<hr>
+
+<!-- SLIDE 11 -->
+<h2>Slide 11 – Resultat: Elliptisk omloppsbana</h2>
+<p class="tid">~1 minut 15 sekunder</p>
+
+<p>Nu till resultaten. Det här är det första nyckelresultatet. Jag startade en satellit på 600 kilometers höjd med hastigheten 8&nbsp;696 meter per sekund — det är 1,15 gånger den cirkulära hastigheten, alltså lite snabbare än vad som behövs för en cirkel.</p>
+
+<p>Och titta vad som händer: satelliten spårar en sluten ellips. Jorden befinner sig i en av ellipsens brännpunkter, precis som Kepler förutspådde för 400 år sedan.</p>
+
+<p><span class="klicka">KLICKA</span> Omloppsperioden är ungefär 10&nbsp;400 sekunder — det är cirka 2 timmar och 53 minuter.</p>
+
+<p><span class="klicka">KLICKA</span> Och det viktiga: den här elliptiska formen var inte inprogrammerad. Jag matade bara in Newtons gravitationsekvation. Att banan blir en ellips med planeten i brännpunkten — det är Keplers första lag — framträdde helt naturligt från simuleringen. Simuleringen återupptäckte Keplers lag på egen hand.</p>
+
+<hr>
+
+<!-- SLIDE 12 -->
+<h2>Slide 12 – Resultat: Flyktbana</h2>
+<p class="tid">~1 minut</p>
+
+<p>Jämför nu med det här. Samma höjd — 600 kilometer — men hastigheten är 11&nbsp;763 meter per sekund istället, alltså 1,10 gånger flykthastigheten. Och se vad som händer: satelliten kommer aldrig tillbaka. Den följer en kurva bort från jorden och försvinner ut i rymden.</p>
+
+<p>Tänk på det: bara ungefär 33 procent högre hastighet — och utfallet är totalt annorlunda. I förra bilden kretsade satelliten runt och runt. Här försvinner den för alltid.</p>
+
+<p><span class="klicka">KLICKA</span> Det är förresten precis så interplanetära uppdrag fungerar. Voyager 1 använde samma princip för att lämna solsystemet.</p>
+
+<hr>
+
+<!-- SLIDE 13 -->
+<h2>Slide 13 – Resultat: Energibevarande</h2>
+<p class="tid">~1 minut 15 sekunder</p>
+
+<p>Det här är kanske det resultat som bäst visar skillnaden mellan de två numeriska metoderna. Ni ser två grafer som visar hur väl varje metod bevarar den totala energin över tid.</p>
+
+<p>Till vänster: RK4. Ni ser en helt platt linje. Energin håller sig nästan perfekt konstant över hela simuleringen.</p>
+
+<p>Till höger: Euler. Här ser ni en tydlig drift — energin ökar sakta över tid, vilket innebär att satelliten gradvis spiralerar bort från sin rätta bana.</p>
+
+<p><span class="klicka">KLICKA</span> Och skillnaden i siffror är häpnadsväckande. RK4 bevarar energin 100 miljarder gånger bättre än Euler.</p>
+
+<p><span class="klicka">KLICKA</span> För att sätta det i perspektiv: om Euler missar målet med en kilometer, så missar RK4 med bredden av en atom. Det visar verkligen varför valet av numerisk metod spelar roll.</p>
+
+<hr>
+
+<!-- SLIDE 14 -->
+<h2>Slide 14 – Resultat: 6&nbsp;000 uppskjutningar i en bild</h2>
+<p class="tid">~1 minut 15 sekunder</p>
+
+<p>Det här är kanske det mest imponerande resultatet och min personliga favorit. Jag körde 6&nbsp;000 simuleringar, var och en med olika startvillkor — olika hastigheter längs y-axeln och olika riktningar längs x-axeln — och plottade resultaten som en värmekarta.</p>
+
+<p>Varje pixel representerar en simulering. Grönt betyder att satelliten stannar i omloppsbana — en elliptisk bana. Gult är precis vid gränsen. Och rött betyder att den flyr ut i rymden — en hyperbolisk bana.</p>
+
+<p><span class="klicka">KLICKA</span> Och titta på den skarpa gränsen. Den går vid ungefär 10&nbsp;693 meter per sekund — och det matchar den teoretiska flykthastigheten exakt. Det är en stark bekräftelse på att simuleringen är korrekt.</p>
+
+<p><span class="klicka">KLICKA</span> En annan intressant observation: notera att vinkeln knappt spelar någon roll. Färgövergången är nästan helt horisontell. Det är hastigheten som avgör nästan allt, precis som energiformeln förutsäger.</p>
+
+<hr>
+
+<!-- SLIDE 15 -->
+<h2>Slide 15 – Diskussion</h2>
+<p class="tid">~1 minut</p>
+
+<p>Så — vi har sett fyra nyckelresultat. Låt mig sammanfatta vad de betyder tillsammans. Flykthastigheten vid 600 kilometers höjd matchar teorin exakt: 10&nbsp;693 meter per sekund. RK4 bevarar energin 100 miljarder gånger bättre än Euler. Och Keplers lagar framträdde naturligt från Newtons gravitation — de var inte inkodade i simuleringen.</p>
+
+<p><span class="klicka">KLICKA</span> Den bredare slutsatsen är att numerisk simulering kan modellera fysik där exakta analytiska lösningar är opraktiska. Det är så rymdorganisationer faktiskt arbetar idag.</p>
+
+<p>När det gäller begränsningar: det här är en 2D-simulering — verkliga banor är 3D. Det är bara två kroppar — ingen måne, ingen sol, ingen atmosfär. Och inga relativistiska effekter.</p>
+
+<p><span class="klicka">KLICKA</span> Men dessa begränsningar är välkända och påverkar inte kärnresultaten för det omfång arbetet har.</p>
+
+<hr>
+
+<!-- SLIDE 16 -->
+<h2>Slide 16 – Utmaningar längs vägen</h2>
+<p class="tid">~1 minut</p>
+
+<p>Jag vill också vara ärlig om vilka utmaningar jag stötte på längs vägen.</p>
+
+<p>Först och främst: matematiken var svår. Att förstå Taylorserier, härledningen av RK4, och alla formler för omloppsbanemekanik krävde stor ansträngning och många timmar.</p>
+
+<p><span class="klicka">KLICKA</span> Sedan: var börjar man ens? Att gå från "jag vill simulera omloppsbanor" till fungerande kod krävde att jag bröt ner problemet i små, hanterbara delar.</p>
+
+<p><span class="klicka">KLICKA</span> Att felsöka en fysiksimulering var också speciellt. När banan ser fel ut — är det ett kodfel eller ett matematikfel? Det är svårare att avgöra än man tror.</p>
+
+<p><span class="klicka">KLICKA</span> Och slutligen: att balansera ambition med tid. Jag ville ständigt lägga till fler funktioner, men behövde faktiskt bli klar med både programmet och rapporten.</p>
+
+<hr>
+
+<!-- SLIDE 17 -->
+<h2>Slide 17 – Tips för ditt gymnasiearbete</h2>
+<p class="tid">~1 minut</p>
+
+<p>Jag vill avsluta med några tips för er som har ert gymnasiearbete framför er.</p>
+
+<p>Nummer ett: börja tidigt och skjut inte upp. Projektet tar alltid längre tid än man tror. Ge er själva marginaltid.</p>
+
+<p><span class="klicka">KLICKA</span> Nummer två: välj någonting ni verkligen tycker om. Ni kommer lägga många timmar på det här. Om ämnet intresserar er känns arbetet mindre som arbete.</p>
+
+<p><span class="klicka">KLICKA</span> Nummer tre: bryt ner stora uppgifter i små steg. "Bygg en omloppssimulator" är överväldigande. "Beräkna gravitationen mellan två punkter" är görbart. Det var det viktigaste jag lärde mig.</p>
+
+<p><span class="klicka">KLICKA</span> Nummer fyra: använd versionshantering, alltså Git. Spara era framsteg, spåra ändringar, och förlora aldrig arbete.</p>
+
+<p><span class="klicka">KLICKA</span> Och nummer fem: var inte rädda att be om hjälp. Lärare, klasskamrater, onlineresurser — ingen gör det helt ensam.</p>
+
+<hr>
+
+<!-- SLIDE 18 -->
+<h2>Slide 18 – Frågor?</h2>
+<p class="tid">Öppen</p>
+
+<p>Tack så mycket för att ni lyssnade! Nu är det öppet för frågor. Jag kan också köra valfritt scenario live i OrbitLab om någon är nyfiken på att se en viss bantyp eller en specifik jämförelse. OrbitLabs källkod finns också på GitHub.</p>
+
+<hr>
+
+<div class="faq">
+<h2>Förberedda svar på troliga frågor</h2>
+
+<h3>"Varför just 600 km höjd?"</h3>
+<p>600 km är en typisk LEO-bana — low Earth orbit. Det är ovanför det mesta av atmosfären men under Van Allen-bältena. ISS ligger på ungefär 400 km, så 600 km är en realistisk och vanlig höjd.</p>
+
+<h3>"Varför tidssteg på 0,25 sekunder?"</h3>
+<p>Det är en avvägning mellan noggrannhet och prestanda. Vid 7&nbsp;500 m/s rör sig satelliten ungefär 2 km per steg, vilket ger tillräcklig upplösning för att RK4 ska följa kurvkrökningen. Samtidigt är det tillräckligt stort för att köra 6&nbsp;000 simuleringar på rimlig tid.</p>
+
+<h3>"Varför inte 3D?"</h3>
+<p>Tvåkroppsproblemet i centralfält är planärt — banan ligger alltid i ett plan. 2D är därför fysikaliskt korrekt för detta fall, och det förenklar visualiseringen utan att offra noggrannhet.</p>
+
+<h3>"Hur lång tid tog projektet?"</h3>
+<p>Programmeringen tog flera månader och rapporten fick flera omskrivningar. Därför tipset att börja tidigt.</p>
+
+<h3>"Använde du AI/ChatGPT?"</h3>
+<p>Den allra första versionen — en enkel matplotlib-plot — genererades med ChatGPT. All vidare utveckling, fysikimplementering, analys och allt det som blev OrbitLab är eget arbete.</p>
+
+<h3>"Kan man använda programmet för andra planeter?"</h3>
+<p>Ja, OrbitLab stödjer 10 himmelskroppar — Jorden, Mars, Jupiter, Saturnus, Neptunus, Venus, Merkurius, Uranus, Månen och Io. Varje planet har realistiska fysikaliska egenskaper och egna förberäknade scenarier.</p>
+
+<h3>"Vad skulle du göra annorlunda?"</h3>
+<p>Jag skulle börja skriva rapporten tidigare, parallellt med programmeringen. Och jag hade velat testa symplektiska integratorer som alternativ till RK4 — de bevarar energi exakt per definition.</p>
+</div>
+
+<div class="tips-box">
+<strong>Presenteringstips</strong>
+<ul>
+  <li><b>Taltempo:</b> Prata lugnt och tydligt. Bättre att säga för lite än att hasta igenom allt.</li>
+  <li><b>Ögonkontakt:</b> Titta på publiken, inte på skärmen. Använd sliden som stöd, inte som manus.</li>
+  <li><b>Pauser:</b> Låt varje klick sjunka in en sekund innan du fortsätter förklara.</li>
+  <li><b>Demo:</b> Ha en backup-plan (inspelad video) ifall live-demon inte fungerar.</li>
+  <li><b>Frågor:</b> Det är helt okej att säga "Det är en bra fråga, det har jag inte undersökt."</li>
+</ul>
+</div>
+
+<!-- ── Editor toolbar (hidden during print) ── -->
+<div id="toolbar" class="no-print">
+  <button id="btn-edit" onclick="toggleEdit()" class="active">✏️ Klart</button>
+  <span class="sep">|</span>
+  <button onclick="window.print()">🖨️ Skriv ut</button>
+  <span class="sep">|</span>
+  <button onclick="saveFile()">💾 Spara HTML</button>
+  <span id="save-status"></span>
+  <span class="hint" id="edit-hint">Klicka på valfri text för att redigera den. Tryck Spara HTML när du är klar.</span>
+</div>
+
+<script>
+  let editMode = false;
+
+  // Elements that should be editable
+  const EDITABLE_SELECTORS = 'p, h1, h2, h3, li, .tid, .meta';
+
+  function toggleEdit() {
+    editMode = !editMode;
+    const btn = document.getElementById('btn-edit');
+    const hint = document.getElementById('edit-hint');
+    document.body.classList.toggle('editing-on', editMode);
+
+    document.querySelectorAll(EDITABLE_SELECTORS).forEach(el => {
+      // Skip the toolbar itself
+      if (el.closest('#toolbar')) return;
+      el.contentEditable = editMode ? 'true' : 'false';
+    });
+
+    btn.classList.toggle('active', editMode);
+    btn.textContent = editMode ? '✏️ Klart' : '✏️ Redigera';
+    hint.textContent = editMode
+      ? 'Klicka på valfri text för att redigera den. Tryck Spara HTML när du är klar.'
+      : '';
+
+    if (!editMode) {
+      showStatus('Redigeringsläge stängt');
+    }
+  }
+
+  function saveFile() {
+    // Temporarily disable contenteditable so it's not saved in the file
+    const editables = document.querySelectorAll('[contenteditable="true"]');
+    editables.forEach(el => el.removeAttribute('contenteditable'));
+
+    const html = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+
+    // Restore contenteditable if still in edit mode
+    if (editMode) {
+      document.querySelectorAll(EDITABLE_SELECTORS).forEach(el => {
+        if (!el.closest('#toolbar')) el.contentEditable = 'true';
+      });
+    }
+
+    const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'talarmanus_print.html';
+    a.click();
+    URL.revokeObjectURL(a.href);
+    showStatus('✓ Sparad!');
+  }
+
+  function showStatus(msg) {
+    const s = document.getElementById('save-status');
+    s.textContent = msg;
+    setTimeout(() => s.textContent = '', 3000);
+  }
+</script>
+
+</body></html>
