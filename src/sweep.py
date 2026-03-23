@@ -28,9 +28,9 @@ ANGLE_RANGE = (0.0, math.pi / 2.0)  # radianer
 SPEED_POINTS = 300                  # horisontell upplösning (x-axel)
 ANGLE_POINTS = 20                   # vertikal upplösning (y-axel)
 
-MODE = "fast"       # "fast" = analytisk (1 sek), "simulated" = RK4 (långsammare)
-DT = 1.0
-MAX_STEPS = 5000
+MODE = "simulated"       # "fast" = analytisk (1 sek), "simulated" = RK4 (långsammare)
+DT = 10.0
+MAX_STEPS = 600
 ESCAPE_RADIUS_FACTOR = 8.0
 
 ENERGY_TOL = 3e5  # ±300 000 J/kg -> synlig gul zon
@@ -66,7 +66,7 @@ def classify_simulated(speed: float, angle_rad: float, escape_radius: float) -> 
         r, v = rk4_step(r, v, DT)
         rmag = math.hypot(r[0], r[1])
         if rmag <= EARTH_RADIUS:
-            return 0
+            return 3  # Krasch
         eps = energy_specific(r, v)
         if eps > 0.0 and rmag > escape_radius:
             return 2
@@ -110,14 +110,14 @@ def run_sweep() -> tuple[np.ndarray, np.ndarray, np.ndarray]:
 # ===========================
 def plot_heatmap(speeds: np.ndarray, angles: np.ndarray, results: np.ndarray) -> None:
     FIGURES_DIR.mkdir(parents=True, exist_ok=True)
-    cmap = ListedColormap(["#2f9e44", "#ffd43b", "#f03e3e"])  # grön, gul, röd
+    cmap = ListedColormap(["#2f9e44", "#ffd43b", "#f03e3e", "#868e96"])  # grön, gul, röd, grå
 
     fig, ax = plt.subplots(figsize=(10, 6))
     extent = [speeds.min(), speeds.max(), math.degrees(angles.min()), math.degrees(angles.max())]
     im = ax.imshow(results, origin="lower", extent=extent, aspect="auto",
-                   cmap=cmap, vmin=-0.5, vmax=2.5)
-    cbar = fig.colorbar(im, ticks=[0,1,2])
-    cbar.ax.set_yticklabels(["Ellips", "Parabel", "Hyperbel"])
+                   cmap=cmap, vmin=-0.5, vmax=3.5)
+    cbar = fig.colorbar(im, ticks=[0,1,2,3])
+    cbar.ax.set_yticklabels(["Ellips", "Parabel", "Hyperbel", "Krasch"])
     ax.set_xlabel("Starthastighet [m/s]")
     ax.set_ylabel("Startvinkel [grader]")
     ax.set_title(f"Bantyp per starthastighet och vinkel ({MODE})")
