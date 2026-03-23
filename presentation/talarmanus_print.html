@@ -167,13 +167,16 @@
 <table class="tidsbudget">
   <tbody><tr><th>Slide</th><th>Innehåll</th><th>Tid</th></tr>
   <tr><td>1</td><td>Titel</td><td>0:30</td></tr>
+  <tr><td>1b</td><td>Newton vs Kod</td><td>0:45</td></tr>
   <tr><td>2</td><td>Vardagskrok</td><td>1:00</td></tr>
   <tr><td>2b</td><td>Bakgrund &amp; inspiration</td><td>1:00</td></tr>
   <tr><td>3</td><td>Kärnfrågan</td><td>1:00</td></tr>
   <tr><td>4</td><td>Boll-på-kulle-analogi</td><td>1:15</td></tr>
   <tr><td>5</td><td>Gravitation</td><td>1:00</td></tr>
+  <tr><td>6</td><td>Energi avgör allt</td><td>1:15</td></tr>
   <tr><td>7</td><td>Varför numeriska metoder</td><td>1:00</td></tr>
   <tr><td>8</td><td>Euler vs RK4</td><td>1:30</td></tr>
+  <tr><td>9</td><td>OrbitLab-programmet</td><td>0:45</td></tr>
   <tr><td>9b</td><td>Utvecklingsprocessen</td><td>0:45</td></tr>
   <tr><td>10</td><td>Demo</td><td>1:30</td></tr>
   <tr><td>11</td><td>Resultat: Elliptisk bana</td><td>1:15</td></tr>
@@ -186,6 +189,17 @@
   <tr><td>18</td><td>Frågor</td><td>öppen</td></tr>
   <tr class="total"><td></td><td>Totalt</td><td>~20 min</td></tr>
 </tbody></table>
+
+<hr>
+<!-- SLIDE 1b -->
+<h2>Slide 1b – Newton vs Kod</h2>
+<p class="tid">~45 sekunder</p>
+
+<p>På den här bilden ser ni Isaac Newton — mannen som för över 300 år sedan formulerade gravitationslagen med penna och papper.</p>
+
+<p><span class="klicka">KLICKA</span> Men idag löser vi det med kod. Vi har verktyg som Newton aldrig kunde drömma om.</p>
+
+<p><span class="klicka">KLICKA</span> I mitt arbete har jag simulerat hur satelliter rör sig i omloppsbana — och testat vad som händer när vi låter datorn räkna det Newton aldrig hann med. Tusentals uppskjutningar, på några sekunder. Det är kraften i numerisk simulering.</p>
 
 <hr>
 <!-- SLIDE 1 -->
@@ -242,13 +256,13 @@
 
 <p>Föreställ er att ni rullar en boll uppför en kulle.</p>
 
-<p><span class="klicka">KLICKA</span> Ger ni bollen en svag knuff så rullar den en bit uppåt, saktar ner och kommer tillbaka. I rymdtermer är det här en elliptisk omloppsbana — satelliten går runt och kommer tillbaka till samma punkt.</p>
+<p><span class="klicka">KLICKA</span> Ger ni bollen en svag knuff rullar den en bit uppåt, stannar till, och rullar tillbaka ner. I rymden motsvarar detta att man inte når omloppsbana, eller att man är fast i jordens dragningskraft och faller tillbaka.</p>
 
-<p><span class="klicka">KLICKA</span> Ger ni precis rätt knuff så når bollen precis toppen av kullen och stannar där. Det här är flyktgränsen — den exakta gränshastigheten.</p>
+<p><span class="klicka">KLICKA</span> Ger ni precis rätt knuff så har bollen exakt den energi som krävs för att övervinna backen. Den saktar ner hela vägen och stannar precis när backen tar slut. Det här är flykthastigheten – den exakta gränsen för att bryta sig loss.</p>
 
-<p><span class="klicka">KLICKA</span> Och ger ni en hård knuff så flyger bollen över toppen och fortsätter ner på andra sidan. Det är en flyktbana — satelliten lämnar jorden och kommer aldrig tillbaka.</p>
+<p><span class="klicka">KLICKA</span> Och ger ni en hård knuff flyger bollen över krönet och fortsätter bortåt med fart kvar. Det är en flyktbana – rymdsonden lämnar jorden för alltid.</p>
 
-<p><span class="klicka">KLICKA</span> Gravitationen är kullen. Hastigheten är knuffen. Och det är energin som avgör vilket utfall man får. Den här analogin är faktiskt inte bara en metafor — det är matematiskt samma ekvation. Och den ekvationen ska vi titta på nu.</p>
+<p><span class="klicka">KLICKA</span> Kullen är gravitationen. Knuffen är hastigheten. Det är en balansräkning av energi. Den här analogin är faktiskt inte bara en metafor — den bygger på exakt samma matematik. Och den ekvationen ska vi titta på nu.</p>
 
 <hr>
 
@@ -261,6 +275,7 @@
 <p><span class="klicka">KLICKA</span> Och det viktiga att förstå är att ju närmare man är, desto starkare är dragningen. Dubbelt så nära innebär fyra gånger så stark kraft. Det kallas det omvända kvadratförhållandet.</p>
 
 <p><span class="klicka">KLICKA</span> Det uttrycks i Newtons gravitationslag: F är lika med G gånger M gånger m delat på r i kvadrat. Kraften mellan två massor, som avtar med kvadraten på avståndet. Det här är den enda ekvationen som styr hela min simulering — allt annat följer från den här enda lagen.</p>
+
 
 <hr>
 
