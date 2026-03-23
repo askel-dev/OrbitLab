@@ -7,6 +7,11 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/theme/black.css">
 <style>
+  body {
+    cursor: none !important;
+    user-select: none; /* Standard för moderna webbläsare */
+        -webkit-user-select: none; /* För Safari/Chrome */
+  }
   :root {
     --r-background-color: #0a0f1e;
     --r-main-font: "Segoe UI", system-ui, sans-serif;
@@ -477,6 +482,7 @@
 <script>
   Reveal.initialize({
     hash: true,
+    mouseWheel: true,
     slideNumber: true,
     transition: 'slide',
     backgroundTransition: 'fade',
@@ -485,6 +491,27 @@
     height: 720,
     plugins: [RevealNotes]
   });
+
+// Blockera den vanliga menyn vid högerklick
+document.addEventListener('contextmenu', function(event) { 
+    event.preventDefault(); 
+});
+
+// Lyssna på musens klick
+window.addEventListener('mousedown', function(event) {
+    // Vänsterklick (knapp 0) = Nästa slide
+    if (event.button === 0) {
+        Reveal.next();
+    }
+    // Mittenklick / Skrollhjulet (knapp 1) = Svart skärm (Pausa)
+    else if (event.button === 1) {
+        Reveal.togglePause();
+    }
+    // Högerklick (knapp 2) = Föregående slide
+    else if (event.button === 2) {
+        Reveal.prev();
+    }
+});
 </script>
 </body>
 </html>
